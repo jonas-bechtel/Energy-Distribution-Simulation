@@ -419,6 +419,32 @@ namespace FileUtils
 
         return binEdges;
     }
+
+    bool IsBinaryFile(const std::filesystem::path& filename)
+    {
+        constexpr std::size_t N = 10;               // how many bytes to examine
+
+        std::ifstream f(filename, std::ios::binary);
+        if (!f) return false;                       // cannot open ? treat as “not ASCII”
+
+        std::uint8_t buf[N];
+        f.read(reinterpret_cast<char*>(buf), N);
+        std::size_t read = static_cast<std::size_t>(f.gcount());
+        if (read == 0) return false;                // empty file ? not ASCII (or change to true if you prefer)
+
+        for (std::size_t i = 0; i < read; ++i)
+        {
+            unsigned char c = buf[i];
+
+            // 0x09 = TAB, 0x0A = LF, 0x0D = CR are also accepted
+            bool ok = (c == '\t' || c == '\n' || c == '\r' ||
+                (c >= 0x20 && c <= 0x7E));   // printable ASCII range
+
+            if (!ok) return false;                  // found a non?ASCII byte
+        }
+        return true;                                // all examined bytes passed
+        
+    }
 }
 
 

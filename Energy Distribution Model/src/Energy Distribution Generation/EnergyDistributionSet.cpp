@@ -14,6 +14,9 @@ void SetInformation::AddDistributionValues(const EnergyDistribution& dist)
 	fitFWHM.push_back(dist.outputParameter.fitFWHM.get());
 	fitScalingFactor.push_back(dist.outputParameter.fitScalingFactor.get());
 	FWHM.push_back(dist.outputParameter.FWHM.get());
+	mainPeakPositions.push_back(dist.outputParameter.mainPeakPosition.get());
+	distanceLeftFWHM.push_back(dist.outputParameter.distancesFWHM.get().x);
+	distanceRightFWHM.push_back(dist.outputParameter.distancesFWHM.get().y);
 }
 
 void SetInformation::RemoveDistributionValues(int index)
@@ -28,6 +31,9 @@ void SetInformation::RemoveDistributionValues(int index)
 	fitFWHM.erase(fitFWHM.begin() + index);
 	fitScalingFactor.erase(fitScalingFactor.begin() + index);
 	FWHM.erase(FWHM.begin() + index);
+	mainPeakPositions.erase(mainPeakPositions.begin() + index);
+	distanceLeftFWHM.erase(distanceLeftFWHM.begin() + index);
+	distanceRightFWHM.erase(distanceRightFWHM.begin() + index);
 }
 
 void SetInformation::PlotFitEd(std::string setLabel)
@@ -66,6 +72,24 @@ void SetInformation::PlotFWHM(std::string setLabel)
 	ImPlot::PlotLine(setLabel.c_str(), detuningEnergy.data(), FWHM.data(), detuningEnergy.size());
 }
 
+void SetInformation::PlotMainPeakPosition(std::string setLabel)
+{
+	if (!plot) return;
+	ImPlot::PlotLine(setLabel.c_str(), detuningEnergy.data(), mainPeakPositions.data(), detuningEnergy.size());
+}
+
+void SetInformation::PlotDistanceLeftFWHM(std::string setLabel)
+{
+	if (!plot) return;
+	ImPlot::PlotLine(setLabel.c_str(), detuningEnergy.data(), distanceLeftFWHM.data(), detuningEnergy.size());
+}
+
+void SetInformation::PlotDistanceRightFWHM(std::string setLabel)
+{
+	if (!plot) return;
+	ImPlot::PlotLine(setLabel.c_str(), detuningEnergy.data(), distanceRightFWHM.data(), detuningEnergy.size());
+}
+
 void SetInformation::Save(std::filesystem::path folder)
 {
 	// set the output filepath
@@ -85,13 +109,13 @@ void SetInformation::Save(std::filesystem::path folder)
 		return;
 	}
 
-	outfile << "# index\tE_lab\tE_d\tfit E_d\tfit kT_long\tfit kT_trans\tfit scaling factor\tfit FWHM\tFWHM\n";
+	outfile << "# index\tE_lab\tE_d\tfit E_d\tfit kT_long\tfit kT_trans\tfit scaling factor\tfit FWHM\tFWHM\tmain peak position\tdistance left FWHM\tdistance right FWHM\n";
 
 	for (int i = 0; i < detuningEnergy.size(); i++)
 	{
 		outfile << indeces[i] << "\t" << centerLabEnergy[i] << "\t" << detuningEnergy[i] << "\t" << fitDetuningEnergy[i] << "\t" <<
 			fitLongitudinalTemperature[i] << "\t" << fitTransverseTemperature[i] << "\t" << fitScalingFactor[i] << "\t" <<
-			fitFWHM[i] << "\t" << FWHM[i] << "\n";
+			fitFWHM[i] << "\t" << FWHM[i] << "\t" << mainPeakPositions[i] << "\t" << distanceLeftFWHM[i] << "\t" << distanceRightFWHM[i] << "\n";
 	}
 
 	outfile.close();
@@ -246,7 +270,7 @@ void EnergyDistributionSet::ShowList()
 		ImGui::EndPopup();
 	}
 	
-	ImGui::Text("energy distrubtion set: %s", Label().c_str());
+	ImGui::Text("energy distrubtion set: %s", GetLabel().c_str());
 
 	if (ImGui::Button("save set"))
 	{
@@ -290,7 +314,7 @@ void EnergyDistributionSet::SaveHists() const
 	}
 }
 
-void EnergyDistributionSet::Load(std::filesystem::path& infolder, bool loadSamples)
+void EnergyDistributionSet::Load(std::filesystem::path& infolder)
 {
 	if (!std::filesystem::exists(infolder) || !std::filesystem::is_directory(infolder))
 	{
@@ -305,7 +329,7 @@ void EnergyDistributionSet::Load(std::filesystem::path& infolder, bool loadSampl
 		{
 			std::filesystem::path file = entry.path();
 			EnergyDistribution newDist;
-			newDist.Load(file, loadSamples);
+			newDist.Load(file);
 
 			AddDistribution(std::move(newDist));
 		}
@@ -339,7 +363,7 @@ EnergyDistributionSet::EnergyDistributionSet()
 //	return *this;
 //}
 
-std::string EnergyDistributionSet::Label()
+std::string EnergyDistributionSet::GetLabel()
 {
 	return (folder / subFolder).string();
 }

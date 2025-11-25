@@ -13,6 +13,9 @@ namespace LabEnergy
 	// 3D Hist with main data
 	static TH3D* hist;
 
+	// 1D hist with min energy value across z axis
+	static TH1D* noSpaceChargeHist = nullptr;
+
 	// optional parameters
 	static bool uniformLabEnergies = false;
 	static bool noSpaceCharge = false;
@@ -41,24 +44,32 @@ namespace LabEnergy
 
 		if(noSpaceCharge)
 		{
-			double minValue = std::numeric_limits<double>::max();  // start with large number
+			if (interpolateEnergy)
+				return noSpaceChargeHist->Interpolate(
+					std::clamp(z, noSpaceChargeHist->GetXaxis()->GetXmin(),
+								  noSpaceChargeHist->GetXaxis()->GetXmax()));
+			else
+				return noSpaceChargeHist->GetBinContent(noSpaceChargeHist->FindBin(z));
 
-			int nx = hist->GetNbinsX();
-			int ny = hist->GetNbinsY();
-			int iz = hist->GetZaxis()->FindBin(z);
-
-			for (int ix = 1; ix <= nx; ++ix) 
-			{   
-				for (int iy = 1; iy <= ny; ++iy)
-				{
-					double val = hist->GetBinContent(ix, iy, iz);
-					if (val < minValue)
-					{
-						minValue = val;
-					}
-				}
-			}
-			return minValue;
+			//double minValue = std::numeric_limits<double>::max();  // start with large number
+			//
+			//int nx = hist->GetNbinsX();
+			//int ny = hist->GetNbinsY();
+			//int iz = hist->GetZaxis()->FindBin(z);
+			//
+			//for (int ix = 1; ix <= nx; ++ix) 
+			//{   
+			//	for (int iy = 1; iy <= ny; ++iy)
+			//	{
+			//		double val = hist->GetBinContent(ix, iy, iz);
+			//		if (val < minValue)
+			//		{
+			//			minValue = val;
+			//		}
+			//	}
+			//}
+			//return minValue;
+			// 
 			//return HistUtils::GetValueAtPosition(hist, { 0, 0, z }, interpolateEnergy);
 		}
 
@@ -124,6 +135,51 @@ namespace LabEnergy
 		{
 			hist = LoadLabEnergyFile(energyfile);
 		}
+
+		if (noSpaceCharge)
+		{
+			SetupNoSpaceChargeHist();
+		}
+	}
+
+	void SetupNoSpaceChargeHist()
+	{
+		delete noSpaceChargeHist;
+		noSpaceChargeHist = new TH1D("no sc lab energy", "no sc lab energy", hist->GetNbinsZ(), hist->GetZaxis()->GetXmin(), hist->GetZaxis()->GetXmax());
+
+		int minBinX = 0;
+		int minBinY = 0;
+
+		// find the bin of minimum in the drift tube center
+		int nx = hist->GetNbinsX();
+		int ny = hist->GetNbinsY();
+		double minValue = std::numeric_limits<double>::max();
+
+		for (int ix = 1; ix <= nx; ix++)
+		{
+			for (int iy = 1; iy <= ny; iy++)
+			{
+				double val = hist->GetBinContent(ix, iy, 1);
+				if (val < minValue)
+				{
+					minValue = val;
+					minBinX = ix;
+					minBinY = iy;
+				}
+			}
+		}
+		
+		for (int iz = 1; iz <= hist->GetNbinsZ(); iz++)
+		{
+			// use that bin for all other slices
+			double value = hist->GetBinContent(minBinX, minBinY, iz);
+			noSpaceChargeHist->SetBinContent(iz, value);
+		}
+
+		// plot on a root canvas for debugging
+		TCanvas* c1 = new TCanvas("no sc lab energy", "no sc lab energy", 800, 600);
+		noSpaceChargeHist->Draw();
+
 	}
 
 	TH3D* LoadLabEnergyFile(std::filesystem::path file)

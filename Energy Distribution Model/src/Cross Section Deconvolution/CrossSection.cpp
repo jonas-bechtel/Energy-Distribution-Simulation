@@ -376,7 +376,7 @@ void CrossSection::Deconvolve(RateCoefficient& rc, EnergyDistributionSet& set, c
 			rc.value.size() << " != " << set.distributions.size() << std::endl;
 		return;
 	}
-	energyDistriubtionSetFolder = set.Label();
+	energyDistriubtionSetFolder = set.GetLabel();
 	mergedBeamRateCoefficientFile = rc.label;
 	
 	SetupBinning(binSettings, rc);

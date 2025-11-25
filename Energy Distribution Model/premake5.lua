@@ -36,12 +36,12 @@ project "Energy Distribution Model"
 		"%{wks.location}/Energy Distribution Model/vendor/tinyfiledialogs",
 		"%{wks.location}/Energy Distribution Model/vendor/JSPEC/include",
 		"%{wks.location}/Energy Distribution Model/vendor/Betacool/src",
-		"%{ROOT_DIR}/include"
+		"%{wks.location}/Energy Distribution Model/vendor/root_v6.32.04/include"
 	}
 
 	libdirs 
 	{
-		"%{ROOT_DIR}/lib"
+		"%{wks.location}/Energy Distribution Model/vendor/root_v6.32.04/lib"
 	}
 
 	links

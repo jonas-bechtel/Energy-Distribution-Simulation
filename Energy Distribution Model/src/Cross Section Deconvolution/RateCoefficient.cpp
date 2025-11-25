@@ -59,7 +59,7 @@ std::string RateCoefficient::GetLabel()
 
 void RateCoefficient::Convolve(const CrossSection& cs, EnergyDistributionSet& set)
 {
-	energyDistriubtionSetFolder = set.Label();
+	energyDistriubtionSetFolder = set.GetLabel();
 	crossSectionFile = cs.label;
 	measured = false;
 

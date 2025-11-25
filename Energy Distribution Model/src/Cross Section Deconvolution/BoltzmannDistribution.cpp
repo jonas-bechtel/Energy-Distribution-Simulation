@@ -18,7 +18,7 @@ namespace BoltzmannDistribution
 		return 2.0 * sqrt(energy / TMath::Pi()) * pow(1.0 / kB_T, 1.5) * exp(-energy / kB_T);
 	}
 
-	void Update(CrossSection* currentCS)
+	void Update(CrossSection& currentCS)
 	{
 		float step = (energyRange[1] - energyRange[0]) / 1999;
 		for (int i = 0; i < 2000; i++)
@@ -27,9 +27,9 @@ namespace BoltzmannDistribution
 			values[i] = Function(energies[i], temperature);
 			float velocity = TMath::Sqrt(2 * energies[i] * TMath::Qe() / PhysicalConstants::electronMass);
 			float sigma = 0;
-			if (currentCS)
+			if (currentCS.GetHist())
 			{
-				sigma = currentCS->GetHist()->Interpolate(energies[i]);
+				sigma = currentCS.GetHist()->Interpolate(energies[i]);
 			}
 			valuesMultiplied[i] = values[i] * velocity * sigma;
 		}
@@ -47,7 +47,7 @@ namespace BoltzmannDistribution
 		ImPlot::PopStyleColor();
 	}
 
-	void ShowWindow(bool& show, CrossSection* currentCS)
+	void ShowWindow(bool& show, CrossSection& currentCS)
 	{
 		if (!show)
 		{

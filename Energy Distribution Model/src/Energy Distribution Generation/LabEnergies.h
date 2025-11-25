@@ -23,6 +23,8 @@ namespace LabEnergy
 
 	void SetupDistribution(std::filesystem::path energyfile);
 
+	void SetupNoSpaceChargeHist();
+
 	TH3D* LoadLabEnergyFile(std::filesystem::path file);
 	TH3D* GenerateUniformLabEnergies();
 

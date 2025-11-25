@@ -40,12 +40,12 @@ namespace MCMC
 	static double interpolationTime = 0;
 
 	// threading stuff
-	static unsigned int numThreads = std::thread::hardware_concurrency();
+	static unsigned const int numThreads = std::thread::hardware_concurrency();
 	static std::vector<std::future<float>> futures;
 
 	// RNG stuff
-	//std::default_random_engine generator;
-	static std::array<RNG_engine, 4> generatorList;
+	//std::default_random_engine generator
+	static std::vector<RNG_engine> generatorList;
 	//std::subtract_with_carry_engine< std::uint_fast64_t, 48, 5, 12> generator; // is slightly faster but maybe less quality
 	//std::linear_congruential_engine<std::uint_fast32_t, 48271, 0, 2147483647> generator; // is even faster
 	static std::uniform_real_distribution<double> uniformDist = std::uniform_real_distribution<double>(0.0, 1.0);
@@ -72,10 +72,8 @@ namespace MCMC
 		canvas = new ROOTCanvas("MCMC canvas", "MCMC canvas", 1200, 500);
 		canvas->Divide(2, 1);
 
-		if (generatorList.size() < numThreads)
-		{
-			std::cout << "list of generators is not large enough: size = " << generatorList.size() << " # threads = " << numThreads << std::endl;
-		}
+		generatorList.resize(numThreads);
+		
 		for (unsigned int i = 0; i < numThreads; i++)
 		{
 			generatorList.at(i) = RNG_engine();

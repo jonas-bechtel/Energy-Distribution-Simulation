@@ -8,6 +8,7 @@
 #include "FileUtils.h"
 #include "Eigen/SVD"
 #include <Constants.h>
+#include <ImGuiUtils.h>
 
 namespace DeconvolutionWindow
 {
@@ -43,7 +44,7 @@ namespace DeconvolutionWindow
 
 	void Init()
 	{
-		BoltzmannDistribution::Update(nullptr);
+		BoltzmannDistribution::Update(GetCurrentCS());
 
 		// temp: load default rate coefficient
 		RateCoefficient rc;
@@ -90,6 +91,36 @@ namespace DeconvolutionWindow
 
 	}
 
+	RateCoefficient& GetCurrentRC()
+	{
+		static RateCoefficient dummy;
+		if (rateCoefficientList.empty())
+		{
+			return dummy;
+		}
+		return rateCoefficientList.at(currentRateCoefficientIndex);
+	}
+
+	CrossSection& GetCurrentCS()
+	{
+		static CrossSection dummy;
+		if (crossSectionList.empty())
+		{
+			return dummy;
+		}
+		return crossSectionList.at(currentCrossSectionIndex);
+	}
+
+	PlasmaRateCoefficient& GetCurrentPRC()
+	{
+		static PlasmaRateCoefficient dummy;
+		if (plasmaRateCoefficientList.empty())
+		{
+			return dummy;
+		}
+		return plasmaRateCoefficientList.at(currentPlasmaRateCoefficientIndex);
+	}
+
 	void ShowWindow()
 	{
 		if (ImGui::Begin("Deconvolution Window"))
@@ -107,8 +138,8 @@ namespace DeconvolutionWindow
 			ShowSettings();
 			ShowPlots();
 			ImGui::EndGroup();
-
-			CrossSection* currentCrosssection = crossSectionList.empty() ? nullptr : &crossSectionList.at(currentCrossSectionIndex);
+			
+			CrossSection& currentCrosssection = GetCurrentCS();
 			BoltzmannDistribution::ShowWindow(showBoltzmannConvolutionWindow, currentCrosssection);
 
 			binSettings.ShowWindow(showBinningSettingsWindow);
@@ -128,12 +159,10 @@ namespace DeconvolutionWindow
 		if (ImGui::BeginChild("DeconvolveSettings", ImVec2(100.0f, 0.0f), flags))
 		{
 			ImGui::Text("energy distribution set: "); ImGui::SameLine();
-			ImGui::TextColored(inputTextColor, "%s",
-				setList.empty() ? "" : setList.at(currentSetIndex).Label().c_str());
+			ImGui::TextColored(inputTextColor, "%s", EnergyDistributionWindow::GetCurrentSet().GetLabel().c_str());
 
 			ImGui::Text("target rate coefficient: "); ImGui::SameLine();
-			ImGui::TextColored(inputTextColor, "%s",
-				rateCoefficientList.empty() ? "" : rateCoefficientList.at(currentRateCoefficientIndex).GetLabel().c_str());
+			ImGui::TextColored(inputTextColor, "%s", GetCurrentRC().GetLabel().c_str());
 
 			ImGui::Checkbox("show binning settings", &showBinningSettingsWindow);
 			ImGui::SameLine();
@@ -144,59 +173,36 @@ namespace DeconvolutionWindow
 
 			if (ImGui::Button("Deconvolve Cross Section"))
 			{
-				if (setList.empty() || rateCoefficientList.empty())
-				{
-					std::cout << "no energy distribution set or rate coefficient selected\n";
-				}
-				else
-				{
-					EnergyDistributionSet& currentSet = EnergyDistributionWindow::GetCurrentSet();
-					RateCoefficient& currentRC = rateCoefficientList.at(currentRateCoefficientIndex);
-
-					CrossSection cs;
-					cs.SetLabel(CSnameInput);
-					cs.Deconvolve(currentRC, currentSet, fitSettings, binSettings);
-					cs.Save();
-					AddCrossSectionToList(cs);
-				}
+				OnDeconvolveButtonClicked();
 			}
+			
+			ShowSizeMismatchPopup();
+			ShowMissingDataPopup();	
 		}
 		ImGui::EndChild();
+		
 		
 		ImGui::SameLine();
 		if (ImGui::BeginChild("ConvolveSettings", ImVec2(100.0f, 0.0f), flags))
 		{
 			ImGui::Text("energy distribution set: "); ImGui::SameLine();
-			ImGui::TextColored(inputTextColor, "%s",
-				setList.empty() ? "" : setList.at(currentSetIndex).Label().c_str());
+			ImGui::TextColored(inputTextColor, "%s", EnergyDistributionWindow::GetCurrentSet().GetLabel().c_str());
 
 			ImGui::Text("cross section: "); ImGui::SameLine();
-			ImGui::TextColored(inputTextColor, "%s",
-				crossSectionList.empty() ? "" : crossSectionList.at(currentCrossSectionIndex).GetLabel().c_str());
+			ImGui::TextColored(inputTextColor, "%s", GetCurrentCS().GetLabel().c_str());
 
 			ImGui::SetNextItemWidth(150.0f);
 			ImGui::InputText("output RC name", RCnameInput, sizeof(RCnameInput));
 
 			if (ImGui::Button("Convolve Rate Coefficient"))
 			{
-				if(setList.empty() || crossSectionList.empty())
-				{
-					std::cout << "no energy distribution set or cross section selected\n";
-				}
-				else
-				{
-					EnergyDistributionSet& currentSet = EnergyDistributionWindow::GetCurrentSet();
-					CrossSection& currentCS = crossSectionList.at(currentCrossSectionIndex);
-
-					RateCoefficient rc;
-					rc.Convolve(currentCS, currentSet);
-					rc.SetLabel(RCnameInput);
-					rc.Save();
-					AddRateCoefficientToList(rc);
-				}
+				OnConvolveButtonClicked();
 			}
+
+			ShowMissingDataPopup();
 		}
 		ImGui::EndChild();
+
 	}
 
 	void ShowPlots()
@@ -289,6 +295,74 @@ namespace DeconvolutionWindow
 			PlasmaRateCoefficient::ShowConvolutionParamterInputs();
 		}
 		ImGui::End();
+	}
+
+	void OnDeconvolveButtonClicked()
+	{
+		std::vector<EnergyDistributionSet>& setList = EnergyDistributionWindow::GetSetList();
+
+		if (setList.empty() || rateCoefficientList.empty())
+		{
+			ImGui::OpenPopup("missing data");
+			std::cout << "no energy distribution set or rate coefficient selected\n";
+			return;
+		}
+		
+		EnergyDistributionSet& currentSet = EnergyDistributionWindow::GetCurrentSet();
+		RateCoefficient& currentRC = GetCurrentRC();
+
+		if (currentRC.GetSize() != currentSet.GetSize())
+		{
+			ImGui::OpenPopup("size mismatch");
+			std::cout << "sizes of rate coefficients and energy distributions dont match: " +
+				std::to_string(currentRC.GetSize()) + " != " + std::to_string(currentSet.GetSize()) << std::endl;
+			return;
+		}
+		
+		CrossSection cs;
+		cs.SetLabel(CSnameInput);
+		cs.Deconvolve(currentRC, currentSet, fitSettings, binSettings);
+		cs.Save();
+		AddCrossSectionToList(cs);
+	}
+
+	void OnConvolveButtonClicked()
+	{
+		std::vector<EnergyDistributionSet>& setList = EnergyDistributionWindow::GetSetList();
+
+		if (setList.empty() || crossSectionList.empty())
+		{
+			ImGui::OpenPopup("missing data");
+			std::cout << "no energy distribution set or cross section selected\n";
+			return;
+		}
+		
+		EnergyDistributionSet& currentSet = EnergyDistributionWindow::GetCurrentSet();
+		CrossSection& currentCS = GetCurrentCS();
+
+		RateCoefficient rc;
+		rc.Convolve(currentCS, currentSet);
+		rc.SetLabel(RCnameInput);
+		rc.Save();
+		AddRateCoefficientToList(rc);
+	}
+
+	void ShowSizeMismatchPopup()
+	{
+		EnergyDistributionSet& currentSet = EnergyDistributionWindow::GetCurrentSet();
+		RateCoefficient& currentRC = GetCurrentRC();
+
+		ImGuiUtils::ErrorPopup("size mismatch",
+			"Sizes of Rate Coefficients and Energy Distributions dont match:\n"
+			"Rate Coefficients:\t\t" + std::to_string(currentRC.GetSize()) +
+			"\nEnergy distributions:\t" + std::to_string(currentSet.GetSize()));
+	}
+
+	void ShowMissingDataPopup()
+	{
+		ImGuiUtils::ErrorPopup("missing data",
+			"no energy distribution set, rate coefficient\n"
+			"or cross section was selected");
 	}
 
 	void ShowRateCoefficientList()

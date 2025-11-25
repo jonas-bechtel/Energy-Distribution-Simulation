@@ -244,7 +244,7 @@ void EnergyDistribution::SetupBinning(const BinningSettings& binSettings)
 	binValues.reserve(binEdges.size() - 1);
 	binValuesNormalised.reserve(binEdges.size() - 1);
 
-	std::cout << "number bins " << binEdges.size() - 1 << "\n";
+	//std::cout << "number bins " << binEdges.size() - 1 << "\n";
 	SetBins(binEdges.size() - 1, binEdges.data());
 }
 
@@ -315,15 +315,21 @@ void EnergyDistribution::CalculateFWHM()
 	int index = std::distance(binValuesNormalised.begin(), maxValueIt);
 	double maxValue = *maxValueIt;
 	double energyOfMaxValue = binCenters.at(index);
-	//std::cout << "maxvalue: " << maxValue << " index: " << index << std::endl;
+
 	if (std::abs(energyOfMaxValue - eBeamParameter.detuningEnergy) > 1)
 	{
 		std::cout << "maximum value position and detuning energy do not match: " << energyOfMaxValue << " != " << eBeamParameter.detuningEnergy << std::endl;
 	}
 
 	double energyRight;
-	for (double energy = energyOfMaxValue; true; energy += 0.0001)
+	for (double energy = energyOfMaxValue; true; energy += 0.00001)
 	{
+		if (energy > GetXaxis()->GetXmax())
+		{
+			std::cout << "right side value did not go below half maximum" << std::endl;
+			energyRight = GetXaxis()->GetXmax();
+			break;
+		}
 		if (Interpolate(energy) < maxValue / 2)
 		{
 			energyRight = energy;
@@ -331,7 +337,7 @@ void EnergyDistribution::CalculateFWHM()
 		}
 	}
 	double energyLeft;
-	for (double energy = energyOfMaxValue; true; energy -= 0.0001)
+	for (double energy = energyOfMaxValue; true; energy -= 0.00001)
 	{
 		if (energy < 0)
 		{
@@ -347,6 +353,8 @@ void EnergyDistribution::CalculateFWHM()
 	}
 
 	outputParameter.FWHM = energyRight - energyLeft;
+	outputParameter.mainPeakPosition = energyOfMaxValue;
+	outputParameter.distancesFWHM = { (float)(energyOfMaxValue - energyLeft), (float)(energyRight - energyOfMaxValue) };
 }
 
 void EnergyDistribution::FitAnalyticalToPeak(const PeakFitSettings& settings)
@@ -370,18 +378,11 @@ void EnergyDistribution::FitAnalyticalToPeak(const PeakFitSettings& settings)
 	{
 		if (settings.adjustRange[i])
 		{
-			//double* parameter = fitFunction->GetParameters();
-			//double deltaE = sqrt(pow((parameter[2] * log(2)), 2) + 16 * log(2) * parameter[2] * parameter[1]);
-			//double fwhm = GetFWHM(fitFunction);
-			//std::cout << "fwhm gues: " << fwhm << std::endl;
-			///double peakWidthGuess = std::max(0.001, fwhm / 2);
 			double maxValue = fitFunction->GetMaximum();
 			double XofMax = fitFunction->GetMaximumX();
 			double energyMin = fitFunction->GetX(maxValue / 8, std::max(0.0, XofMax - 1), XofMax);   //std::max(0.0, fitFunction->GetMaximumX() - 1 * peakWidthGuess);
 			double energyMax = fitFunction->GetX(maxValue / 8, XofMax, XofMax + 1);     //std::max(0.002, fitFunction->GetMaximumX() + 1 * peakWidthGuess);
 			fitFunction->SetRange(energyMin, energyMax);
-
-			//std::cout << "Fit round " << i << ": peakWidthGuess: " << peakWidthGuess << ", energyMin : " << energyMin << ", energyMax : " << energyMax << std::endl;
 		}
 		
 		double* parameter = fitFunction->GetParameters();
@@ -392,11 +393,6 @@ void EnergyDistribution::FitAnalyticalToPeak(const PeakFitSettings& settings)
 		Fit(fitFunction, "QRN0");
 	}
 	
-	
-	//std::cout << "maxValue: " << maxValue << " maxValue / 2: " << maxValue / 2 << " energyOfMax: " << energyOfMax << std::endl;
-	//std::cout << "xLeft: " << xLeft << " xRight: " << xRight << std::endl;
-	//std::cout << "f(xLeft) = " << fitFunction->Eval(xLeft) << " f(xRight) = " << fitFunction->Eval(xRight) << std::endl;
-
 	// set all fit results
 	double* fitParameter = fitFunction->GetParameters();
 	double rangeMin, rangeMax;
@@ -446,7 +442,7 @@ void EnergyDistribution::FitAnalyticalToPeak(const PeakFitSettings& settings)
 		}
 	}
 
-	std::cout << "fit array size: " << fitX.size() << std::endl;
+	//std::cout << "fit array size: " << fitX.size() << std::endl;
 	fitFunction->Delete();
 }
 
@@ -719,23 +715,16 @@ void EnergyDistribution::ShowListItem()
 void EnergyDistribution::SaveSamples(std::filesystem::path folder) const
 {
 	std::filesystem::path file = folder / (Filename() + ".samples");
-	std::ofstream outfile(file);
+	std::ofstream outfile(file, std::ios::binary);
 
 	if (!outfile.is_open())
 	{
 		std::cerr << "Error opening file" << std::endl;
 		return;
 	}
-
-	outfile << GetHeaderString();
-
-	outfile << "# sampled collision energy values\n";
-	for (double energy : collisionEnergies)
-	{
-		outfile << energy << "\n";
-	}
-
-	outfile.close();
+	// new binary file saving
+	outfile.write(reinterpret_cast<const char*>(collisionEnergies.data()),
+		collisionEnergies.size() * sizeof(double));
 }
 
 void EnergyDistribution::SaveHist(std::filesystem::path folder) const
@@ -760,7 +749,7 @@ void EnergyDistribution::SaveHist(std::filesystem::path folder) const
 	outfile.close();
 }
 
-void EnergyDistribution::Load(std::filesystem::path& file, bool loadSamples)
+void EnergyDistribution::Load(std::filesystem::path& file)
 {
 	// load the .asc file with the histogram data
 	std::ifstream histFile(file);
@@ -794,34 +783,67 @@ void EnergyDistribution::Load(std::filesystem::path& file, bool loadSamples)
 	histFile.close();
 	std::cout << "loaded file: " << file.filename();
 
+	LoadSamples(file);
+	
+	std::cout << std::endl;
+}
+
+void EnergyDistribution::LoadSamples(std::filesystem::path& file)
+{
 	// see if .samples file exist with collision energy data
-	if (loadSamples)
+	std::filesystem::path samplesFilename = file.replace_extension(".samples");
+	if (!std::filesystem::exists(samplesFilename))
 	{
-		std::filesystem::path samplesFilename = file.replace_extension(".samples");
-		if (std::filesystem::exists(samplesFilename))
+		std::cout << "\tno samples file found";
+		return;
+	}
+	bool isBinary = FileUtils::IsBinaryFile(samplesFilename);
+
+	std::ifstream samplesFile(samplesFilename, std::ios::binary);
+
+	// Check if the file was successfully opened
+	if (!samplesFile.is_open())
+	{
+		std::cerr << "Error: Could not open the file " << samplesFilename << std::endl;
+		return;
+	}
+
+	// check for binary or text file
+	//char firstChar;
+	//samplesFile.get(firstChar);
+
+	//samplesFile.clear();
+	//samplesFile.seekg(0, std::ios::beg);
+
+	//if (firstChar == '#') 
+	if(isBinary)
+	{
+		// get header to get rid of it
+		FileUtils::GetHeaderFromFile(samplesFile);
+
+		collisionEnergies.reserve(mcmcParameter.numberSamples);
+
+		std::string line;
+		while (std::getline(samplesFile, line))
 		{
-			std::ifstream samplesFile(samplesFilename);
-
-			// Check if the file was successfully opened
-			if (!samplesFile.is_open())
-			{
-				std::cerr << "Error: Could not open the file " << samplesFilename << std::endl;
-				return;
-			}
-			// get header to get rid of it
-			FileUtils::GetHeaderFromFile(samplesFile);
-
-			collisionEnergies.reserve(mcmcParameter.numberSamples);
-
-			while (std::getline(samplesFile, line))
-			{
-				collisionEnergies.push_back(std::stod(line));
-			}
-			std::cout << "\tsamples file found";
-			samplesFile.close();
+			collisionEnergies.push_back(std::stod(line));
 		}
 	}
-	std::cout << std::endl;
+	else 
+	{
+		int numberSamples = mcmcParameter.numberSamples;
+		collisionEnergies.resize(numberSamples);
+		samplesFile.read(reinterpret_cast<char*>(collisionEnergies.data()), numberSamples * sizeof(double));
+
+		auto bytesRead = samplesFile.gcount();
+		if (bytesRead != numberSamples * sizeof(double))
+		{
+			std::cout << "Read fewer bytes than expected: " << bytesRead << "\n";
+		}
+	}
+	
+	std::cout << "\tsamples file found";
+	samplesFile.close();
 }
 
 std::string EnergyDistribution::GetHeaderString() const

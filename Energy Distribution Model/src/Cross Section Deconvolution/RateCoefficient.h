@@ -17,6 +17,7 @@ public:
 
 	void SetLabel(std::string label);
 	std::string GetLabel();
+	int GetSize() const { return detuningEnergies.size(); }
 
 	void Convolve(const CrossSection& cs, EnergyDistributionSet& set);
 

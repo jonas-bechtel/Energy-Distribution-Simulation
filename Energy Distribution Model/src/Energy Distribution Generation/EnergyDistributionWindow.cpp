@@ -29,9 +29,6 @@ namespace EnergyDistributionWindow
 	static int endIndex = 1;
 	static bool doAll = false;
 
-	// save all sampled values in a file to load it again
-	static bool loadSamples = true;
-
 	// set information window things
 	static bool showSetInformation = false;
 	static bool infoPlotsLogX = false;
@@ -54,6 +51,8 @@ namespace EnergyDistributionWindow
 
 	static bool showAllParamsWindow = false;
 
+	static bool firstTime = true;
+
 	void Init()
 	{
 		AnalyticalDistribution::Update();
@@ -68,6 +67,11 @@ namespace EnergyDistributionWindow
 
 	EnergyDistributionSet& GetCurrentSet()
 	{
+		static EnergyDistributionSet dummy;
+		if(setList.empty())
+		{
+			return dummy;
+		}
 		return setList.at(currentSetIndex);
 	}
 
@@ -113,7 +117,7 @@ namespace EnergyDistributionWindow
 		if (!folder.empty())
 		{
 			EnergyDistributionSet set;
-			set.Load(folder, loadSamples);
+			set.Load(folder);
 			if (set.GetDistributions().empty())
 			{
 				std::cout << "there was no energy distribution in that folder" << std::endl;
@@ -139,7 +143,6 @@ namespace EnergyDistributionWindow
 			ShowPlot();
 			ImGui::EndGroup();
 
-			//ShowSetInformationWindow();
 			AnalyticalDistribution::ShowWindow(showAnalytical);
 			peakFitSettings.ShowWindow(showPeakFitSettings);
 			binSettings.ShowWindow(showBinningSettings);
@@ -188,7 +191,7 @@ namespace EnergyDistributionWindow
 				EnergyDistributionSet& currentSet = setList.at(currentSetIndex);
 				char buf[64] = "";
 				strncpy_s(buf, currentSet.GetSubfolder().string().c_str(), sizeof(buf) - 1);
-				ImGui::SetNextItemWidth(150.0f);
+				ImGui::SetNextItemWidth(250.0f);
 				if (ImGui::InputText("set subfolder", buf, IM_ARRAYSIZE(buf)))
 				{
 					currentSet.SetSubfolder(std::filesystem::path(buf));
@@ -198,7 +201,7 @@ namespace EnergyDistributionWindow
 			ImGui::Separator();
 
 			ImGui::BeginDisabled(currentDescriptionFile.empty());
-			if (ImGui::Button("Generate Distributions from File"))
+			if (ImGui::Button("Generate Distributions"))
 			{
 				std::filesystem::path folder = currentDescriptionFile.parent_path().parent_path().filename() /
 					currentDescriptionFile.parent_path().filename();
@@ -219,22 +222,30 @@ namespace EnergyDistributionWindow
 					set.AddDistribution(std::move(newDist));
 				}
 			}
-			ImGui::EndDisabled();
+			
 
-			ImGui::SetNextItemWidth(80.0f);
+			bool changed = false;
+			ImGui::SetNextItemWidth(90.0f);
 			ImGui::BeginDisabled(doAll);
-			ImGui::InputInt("start", &startIndex);
+			changed |= ImGui::InputInt("start", &startIndex);
 			ImGui::SameLine();
-			ImGui::SetNextItemWidth(80.0f);
-			ImGui::InputInt("end", &endIndex);
+			ImGui::SetNextItemWidth(90.0f);
+			changed |= ImGui::InputInt("end", &endIndex);
 			ImGui::EndDisabled();
+			if (changed)
+			{
+				startIndex = std::max(1, startIndex);
+				startIndex = std::min(startIndex, maxIndex);
+				endIndex = std::max(startIndex, endIndex);
+				endIndex = std::min(endIndex, maxIndex);
+			}
 			ImGui::SameLine();
 			ImGui::Checkbox("all", &doAll);
 			ImGui::BeginDisabled(!doAll);
 			ImGui::SameLine();
 			ImGui::Text("(max Index: %d)", maxIndex);
 			ImGui::EndDisabled();
-
+			ImGui::EndDisabled();
 		}
 		ImGui::EndChild();
 	}
@@ -294,7 +305,7 @@ namespace EnergyDistributionWindow
 					for (auto& filename : filenames)
 					{
 						EnergyDistribution energyDist;
-						energyDist.Load(filename, loadSamples);
+						energyDist.Load(filename);
 						std::filesystem::path subfolder = filename.parent_path().filename();
 						std::filesystem::path folder = filename.parent_path().parent_path().parent_path().filename() /
 							filename.parent_path().parent_path().filename();
@@ -305,7 +316,6 @@ namespace EnergyDistributionWindow
 				}
 			}
 			ImGui::SameLine();
-			ImGui::Checkbox("load samples", &loadSamples);
 			ImGui::Checkbox("show set information", &showSetInformation);
 		}
 		ImGui::EndChild();
@@ -446,7 +456,7 @@ namespace EnergyDistributionWindow
 				for (EnergyDistributionSet& set : setList)
 				{
 					ImGui::PushID(i++);
-					ImGui::Checkbox(set.Label().c_str(), &set.GetInfo().plot);
+					ImGui::Checkbox(set.GetLabel().c_str(), &set.GetInfo().plot);
 					ImGui::PopID();
 				}
 
@@ -458,7 +468,7 @@ namespace EnergyDistributionWindow
 
 			int i = 0;
 			ImPlotSubplotFlags subplotflags = ImPlotSubplotFlags_NoTitle | ImPlotSubplotFlags_ShareItems;
-			if (ImPlot::BeginSubplots("set info", 2, 3, ImVec2(-1, -1), subplotflags))
+			if (ImPlot::BeginSubplots("set info", 3, 3, ImVec2(-1, -1), subplotflags))
 			{
 				if (ImPlot::BeginPlot("fit E_d"))
 				{
@@ -469,7 +479,7 @@ namespace EnergyDistributionWindow
 					int i = 0;
 					for (EnergyDistributionSet& set : setList)
 					{
-						set.GetInfo().PlotFitEd(set.Label() + "##" + std::to_string(i++));
+						set.GetInfo().PlotFitEd(set.GetLabel() + "##" + std::to_string(i++));
 					}
 					
 					ImPlot::EndPlot();
@@ -483,7 +493,7 @@ namespace EnergyDistributionWindow
 					int i = 0;
 					for (EnergyDistributionSet& set : setList)
 					{
-						set.GetInfo().PlotFitlongkT(set.Label() + "##" + std::to_string(i++));
+						set.GetInfo().PlotFitlongkT(set.GetLabel() + "##" + std::to_string(i++));
 					}
 
 					ImPlot::EndPlot();
@@ -497,7 +507,7 @@ namespace EnergyDistributionWindow
 					int i = 0;
 					for (EnergyDistributionSet& set : setList)
 					{
-						set.GetInfo().PlotFitTranskT(set.Label() + "##" + std::to_string(i++));
+						set.GetInfo().PlotFitTranskT(set.GetLabel() + "##" + std::to_string(i++));
 					}
 
 					ImPlot::EndPlot();
@@ -511,7 +521,7 @@ namespace EnergyDistributionWindow
 					int i = 0;
 					for (EnergyDistributionSet& set : setList)
 					{
-						set.GetInfo().PlotFitScalingFactor(set.Label() + "##" + std::to_string(i++));
+						set.GetInfo().PlotFitScalingFactor(set.GetLabel() + "##" + std::to_string(i++));
 					}
 
 					ImPlot::EndPlot();
@@ -525,7 +535,7 @@ namespace EnergyDistributionWindow
 					int i = 0;
 					for (EnergyDistributionSet& set : setList)
 					{
-						set.GetInfo().PlotFitFWHM(set.Label() + "##" + std::to_string(i++));
+						set.GetInfo().PlotFitFWHM(set.GetLabel() + "##" + std::to_string(i++));
 					}
 
 					ImPlot::EndPlot();
@@ -539,7 +549,49 @@ namespace EnergyDistributionWindow
 					int i = 0;
 					for (EnergyDistributionSet& set : setList)
 					{
-						set.GetInfo().PlotFWHM(set.Label() + "##" + std::to_string(i++));
+						set.GetInfo().PlotFWHM(set.GetLabel() + "##" + std::to_string(i++));
+					}
+
+					ImPlot::EndPlot();
+				}
+				if (ImPlot::BeginPlot("main peak position"))
+				{
+					ImPlot::SetupAxes("detuning energy [eV]", "main peak [eV]");
+					if (infoPlotsLogX) ImPlot::SetupAxisScale(ImAxis_X1, ImPlotScale_Log10);
+					if (infoPlotsLogY) ImPlot::SetupAxisScale(ImAxis_Y1, ImPlotScale_Log10);
+
+					int i = 0;
+					for (EnergyDistributionSet& set : setList)
+					{
+						set.GetInfo().PlotMainPeakPosition(set.GetLabel() + "##" + std::to_string(i++));
+					}
+
+					ImPlot::EndPlot();
+				}
+				if (ImPlot::BeginPlot("distance left FWHM"))
+				{
+					ImPlot::SetupAxes("detuning energy [eV]", "distance left FWHM");
+					if (infoPlotsLogX) ImPlot::SetupAxisScale(ImAxis_X1, ImPlotScale_Log10);
+					if (infoPlotsLogY) ImPlot::SetupAxisScale(ImAxis_Y1, ImPlotScale_Log10);
+
+					int i = 0;
+					for (EnergyDistributionSet& set : setList)
+					{
+						set.GetInfo().PlotDistanceLeftFWHM(set.GetLabel() + "##" + std::to_string(i++));
+					}
+
+					ImPlot::EndPlot();
+				}
+				if (ImPlot::BeginPlot("distance right FWHM"))
+				{
+					ImPlot::SetupAxes("detuning energy [eV]", "distance right FWHM");
+					if (infoPlotsLogX) ImPlot::SetupAxisScale(ImAxis_X1, ImPlotScale_Log10);
+					if (infoPlotsLogY) ImPlot::SetupAxisScale(ImAxis_Y1, ImPlotScale_Log10);
+
+					int i = 0;
+					for (EnergyDistributionSet& set : setList)
+					{
+						set.GetInfo().PlotDistanceRightFWHM(set.GetLabel() + "##" + std::to_string(i++));
 					}
 
 					ImPlot::EndPlot();
@@ -562,7 +614,7 @@ namespace EnergyDistributionWindow
 				for (int i = 0; i < setList.size(); i++)
 				{
 					EnergyDistributionSet& set = setList.at(i);
-					std::string label = set.Label();
+					std::string label = set.GetLabel();
 
 					ImGui::PushID(i);
 					bool selected = i == currentSetIndex;

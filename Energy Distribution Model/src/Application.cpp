@@ -8,6 +8,7 @@
 // This is because we need ImTextureID to carry a 64-bit value and by default ImTextureID is defined as void*.
 // This define is set in the example .vcxproj file and need to be replicated in your app or by adding it to your imconfig.h file.
 #include "pch.h"
+#include "imgui_internal.h"
 
 #include "imgui_impl_win32.h"
 #include "imgui_impl_dx12.h"
@@ -239,6 +240,16 @@ void Application::InitImGui()
 
 void Application::Init()
 {
+    auto exeDir = std::filesystem::path(__argv[0]).parent_path();
+    auto relPath = exeDir / "..\\..\\..\\Energy Distribution Model\\vendor\\root_v6.32.04";
+    _putenv_s("ROOTSYS", relPath.string().c_str());
+    _putenv_s("PATH", ((relPath / "bin").string() + ";" + std::getenv("PATH")).c_str());
+
+	// Set ROOT environment variables
+    //_putenv_s("ROOTSYS", (exeDir / "root").string().c_str());
+    //_putenv_s("PATH", ((exeDir / "root" / "bin").string() + ";" + std::getenv("PATH")).c_str());
+
+    //gDebug = 3; // Switch ROOT to verbose mode
     //std::cout << "canvas test " << std::endl;
     //TCanvas c = TCanvas("bla", "bla", 100, 100);
     //c.Divide(2, 1);
@@ -250,6 +261,7 @@ void Application::Init()
     EnergyDistributionWindow::Init();
     CoolingForce::Init();
     DeconvolutionWindow::Init();
+
     //gStyle->SetOptStat(0);
 }
    
@@ -278,21 +290,6 @@ void Application::ShowWindows()
         ImGui::EndMainMenuBar();
     }
 
-    if (ImGui::Begin("Energy Distribution Generation Window"))
-    {
-        ImGuiID dockspace_id = ImGui::GetID("e-dist generation");
-        ImGui::DockSpace(dockspace_id);
-
-        MCMC::ShowWindow();
-        ElectronBeam::ShowWindow();
-        IonBeam::ShowWindow();
-        LabEnergy::ShowWindow();
-        EnergyDistributionWindow::ShowWindow();
-        CoolingForce::ShowWindow();
-
-    }
-    ImGui::End();
-
     if (ImGui::Begin("Cross Section Deconvolution Window"))
     {
         ImGuiID dockspace_id = ImGui::GetID("cs deconvolution");
@@ -302,6 +299,23 @@ void Application::ShowWindows()
 
     }
     ImGui::End();
+
+    if (ImGui::Begin("Energy Distribution Generation Window"))
+    {
+        ImGuiID dockspace_id = ImGui::GetID("e-dist generation");
+        ImGui::DockSpace(dockspace_id);
+
+        MCMC::ShowWindow();
+        ElectronBeam::ShowWindow();
+        IonBeam::ShowWindow();
+        LabEnergy::ShowWindow();
+        CoolingForce::ShowWindow();
+        EnergyDistributionWindow::ShowWindow();
+
+    }
+    ImGui::End();
+
+    
     
 
     if(settings.showImGuiDemoWindow)

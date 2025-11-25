@@ -655,6 +655,7 @@ namespace ElectronBeam
 		ImGui::InputDouble("cathode radius [m]", parameter.cathodeRadius);
 		ImGui::InputDouble("cathode Temperature [K]", parameter.cathodeTemperature);
 		ImGui::InputDouble("extraction energy [eV]", parameter.extractionEnergy);
+		ImGuiUtils::TextTooltip("extraction energy after space charge and contact potential correction");
 		ImGui::InputDouble("expansion factor", parameter.expansionFactor);
 		ImGui::InputDouble("LLR", parameter.LLR);
 		ImGui::InputDouble("sigma lab energy [eV]", parameter.sigmaLabEnergy);
@@ -674,7 +675,7 @@ namespace ElectronBeam
 		ImGui::EndDisabled();
 
 		ImGui::Checkbox("mirror around z-axis", &mirrorAroundZ);
-		ImGuiUtils::TextTooltip("mirrors all values to fill the negative z values");
+		ImGuiUtils::TextTooltip("mirrors all values to fill the negative z range");
 		ImGui::SameLine();
 		ImGui::Checkbox("cut out zeros", &cutOutZeros);
 

@@ -103,6 +103,8 @@ struct OutputParameters : public Parameters
 	ParameterValue<double> effectiveLength = ParameterValue(0.0, "effective length", "%.3f m");
 
 	ParameterValue<double> FWHM = ParameterValue(0.0, "FWHM", "%.4f eV");
+	ParameterValue<double> mainPeakPosition = ParameterValue(0.0, "main peak position", "%.3e eV");
+	ParameterValue<float2> distancesFWHM = ParameterValue(float2(0.0f, 0.0f), "FWHM distances (left/right)", "%.3e, %.3e eV");
 
 private:
 	int GetSize() const override

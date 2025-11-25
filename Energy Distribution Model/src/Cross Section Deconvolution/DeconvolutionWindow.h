@@ -16,10 +16,20 @@ namespace DeconvolutionWindow
 	void AddPlasmaRateToList(PlasmaRateCoefficient& prc);
 	void RemovePlasmaRate(int index);
 
+	RateCoefficient& GetCurrentRC();
+	CrossSection& GetCurrentCS();
+	PlasmaRateCoefficient& GetCurrentPRC();
+
 	void ShowWindow();
 	void ShowSettings();
 	void ShowPlots();
 	void ShowPlasmaRateWindow();
+
+	void OnDeconvolveButtonClicked();
+	void OnConvolveButtonClicked();
+
+	void ShowSizeMismatchPopup();
+	void ShowMissingDataPopup();
 
 	void ShowRateCoefficientList();
 	void ShowCrossSectionList();

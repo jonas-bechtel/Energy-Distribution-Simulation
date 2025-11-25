@@ -12,6 +12,9 @@ struct SetInformation
 	std::vector<double> fitScalingFactor;
 	std::vector<double> fitFWHM;
 	std::vector<double> FWHM;
+	std::vector<double> mainPeakPositions;
+	std::vector<double> distanceLeftFWHM;
+	std::vector<double> distanceRightFWHM;
 
 	bool plot = false;
 
@@ -25,6 +28,9 @@ public:
 	void PlotFitScalingFactor(std::string setLabel);
 	void PlotFitFWHM(std::string setLabel);
 	void PlotFWHM(std::string setLabel);
+	void PlotMainPeakPosition(std::string setLabel);
+	void PlotDistanceLeftFWHM(std::string setLabel);
+	void PlotDistanceRightFWHM(std::string setLabel);
 
 	void Save(std::filesystem::path folder);
 };
@@ -42,7 +48,7 @@ public:
 	void AddDistribution(EnergyDistribution&& distribution);
 	void RemoveDistribution(int index);
 
-	std::string Label();
+	std::string GetLabel();
 	EnergyDistribution* FindByEd(double detuningEnergy) const;
 
 	void SetFolder(std::filesystem::path path);
@@ -54,6 +60,7 @@ public:
 	std::filesystem::path GetSubfolder();
 	const std::vector<EnergyDistribution>& GetDistributions() const;
 	SetInformation& GetInfo();
+	int GetSize() const { return distributions.size(); }
 
 	void CalculatePsisFromBinning(TH1D* crossSection);
 
@@ -61,7 +68,7 @@ public:
 
 	void SaveSamples() const;
 	void SaveHists() const;
-	void Load(std::filesystem::path& folder, bool loadSamples);
+	void Load(std::filesystem::path& folder);
 
 private:
 	std::vector<EnergyDistribution> distributions;
