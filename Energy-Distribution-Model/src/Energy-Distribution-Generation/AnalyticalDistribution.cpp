@@ -244,7 +244,7 @@ namespace AnalyticalDistribution
 				if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("Energy distribution"))
 				{
 					EnergyDistribution& eDist = *(EnergyDistribution*)payload->Data;
-					auto& parameter = eDist.GetOutputParameters();
+					const auto& parameter = eDist.GetOutputParameters();
 					energyRange[0] = std::max(1e-6f, parameter.fitRange.get().x);
 					energyRange[1] = parameter.fitRange.get().y;
 					scale = parameter.fitScalingFactor;

@@ -145,6 +145,10 @@ struct ParameterValue
 	{
 		return *(T*)(&value);
 	}
+	operator T() const
+	{
+		return *(T*)(&value);
+	}
 	operator T* () 
 	{
 		return (T*)&value;
@@ -275,9 +279,16 @@ private:
 	template <typename T, typename... Args>
 	std::string createLine(const std::string& format, const T& value1, const Args&... args) const
 	{
-		char buffer[100];
-		sprintf_s(buffer, format.c_str(), value1, args...);
-		return std::string(buffer);
+		std::ostringstream oss;
+		oss << format << value1;
+		// expand the pack recursively
+		(void)std::initializer_list<int>{ (oss << args, 0)... };
+		return oss.str();
+
+
+		//char buffer[100];
+		//std::snprintf(buffer, format.c_str(), value1, args...);
+		//return std::string(buffer);
 	}
 
 	void* getParameterValue(const std::string& name)
