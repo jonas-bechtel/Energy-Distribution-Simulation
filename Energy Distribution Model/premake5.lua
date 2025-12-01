@@ -1,8 +1,3 @@
-ROOT_DIR = os.getenv("ROOT_DIR")
-if ROOT_DIR == nil then
-    print("ROOT_DIR environment variable is not set! Please make sure it is configured.")
-end
-
 project "Energy Distribution Model"
 	kind "ConsoleApp"
 	language "C++"
@@ -78,6 +73,12 @@ project "Energy Distribution Model"
 			'{COPY} "%{cfg.buildtarget.relpath}" "..\\..\\Energy Distribution Model Release"',
 			'{COPY} "imgui.ini" "..\\..\\Energy Distribution Model Release"'
 		}
+
+		filter "configurations:Debug"
+			debugcommand ("$(SolutionDir)scripts/run-debug.bat")
+
+		filter "configurations:Release"
+			debugcommand ("$(SolutionDir)scripts/run.bat")
     
 
 	filter "configurations:Debug"
@@ -89,3 +90,5 @@ project "Energy Distribution Model"
 		defines "NDEBUG"
 		runtime "Release"
 		optimize "on"
+
+	
