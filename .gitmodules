@@ -1,14 +1,16 @@
-[submodule "Energy Distribution Model/vendor/imgui"]
-    path = Energy Distribution Model/vendor/imgui
+[submodule "Energy-Distribution-Model/vendor/imgui"]
+    path = Energy-Distribution-Model/vendor/imgui
     url = https://github.com/jonas-bechtel/imgui.git
     branch = docking
 
-[submodule "Energy Distribution Model/vendor/implot"]
-    path = Energy Distribution Model/vendor/implot
+[submodule "Energy-Distribution-Model/vendor/implot"]
+    path = Energy-Distribution-Model/vendor/implot
     url = https://github.com/jonas-bechtel/implot.git
-[submodule "Energy Distribution Model/vendor/JSPEC"]
-	path = Energy Distribution Model/vendor/JSPEC
+
+[submodule "Energy-Distribution-Model/vendor/JSPEC"]
+	path = Energy-Distribution-Model/vendor/JSPEC
 	url = https://github.com/jonas-bechtel/JSPEC.git
-[submodule "Energy Distribution Model/vendor/Betacool"]
-	path = Energy Distribution Model/vendor/Betacool
+
+[submodule "Energy-Distribution-Model/vendor/Betacool"]
+	path = Energy-Distribution-Model/vendor/Betacool
 	url = https://github.com/jonas-bechtel/Betacool.git
