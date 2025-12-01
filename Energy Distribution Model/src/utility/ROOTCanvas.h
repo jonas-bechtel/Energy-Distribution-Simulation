@@ -16,6 +16,5 @@ private:
 private:
 	bool m_shown = true;
 
-	static TApplication app;
 };
 

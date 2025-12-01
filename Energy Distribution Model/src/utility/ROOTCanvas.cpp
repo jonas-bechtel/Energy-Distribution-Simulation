@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "ROOTCanvas.h"
 
-TApplication ROOTCanvas::app = TApplication("app", nullptr, nullptr);
+
 
 ROOTCanvas::ROOTCanvas(const char* name, const char* title, int width, int height)
 	: TCanvas(name, title, width, height)

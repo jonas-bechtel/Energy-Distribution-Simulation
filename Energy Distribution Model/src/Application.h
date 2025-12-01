@@ -9,11 +9,10 @@ namespace Application
 		bool showImPlotDemoWindow = false;
 	};
 
-	void InitImGui();
 	void Init();
 	void Run();
 	void ShowWindows();
-	void ShutdownImGui();
+	void Shutdown();
 
 	Settings& GetSettings();
 }
