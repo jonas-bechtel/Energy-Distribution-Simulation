@@ -1,6 +1,6 @@
-workspace "Energy Distribution Model"
+workspace "Energy-Distribution-Simulation"
 	architecture "x86_64"
-	startproject "Energy Distribution Model"
+	startproject "Energy-Distribution-Model"
 
 	configurations
 	{
@@ -17,13 +17,13 @@ outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 
 group "Dependencies"
 	include "vendor/premake"
-	include "Energy Distribution Model/vendor/tinyfiledialogs"
-	include "Energy Distribution Model/vendor/imgui"
-	include "Energy Distribution Model/vendor/implot"
-	include "Energy Distribution Model/vendor/JSPEC"
-	include "Energy Distribution Model/vendor/Betacool"
+	include "Energy-Distribution-Model/vendor/tinyfiledialogs"
+	include "Energy-Distribution-Model/vendor/imgui"
+	include "Energy-Distribution-Model/vendor/implot"
+	include "Energy-Distribution-Model/vendor/JSPEC"
+	include "Energy-Distribution-Model/vendor/Betacool"
 group ""
 
 group "Core"
-	include "Energy Distribution Model"
+	include "Energy-Distribution-Model"
 group ""
