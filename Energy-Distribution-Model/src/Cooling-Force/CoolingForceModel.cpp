@@ -46,7 +46,7 @@ namespace Model
 		return result;
 	}
 
-	void Parameter::FromString(std::string& input)
+	void Parameter::FromString(const std::string& input)
 	{
 		std::istringstream stream(input);
 		std::string token;

@@ -44,7 +44,7 @@ namespace Model
 		inline static bool showLinesTrans = false;
 
 		std::string String() const;
-		void FromString(std::string& input);
+		void FromString(const std::string& input);
 		void ShowWindow(bool& show);
 		void ShowValues();
 		void ShowVelocityLines();
