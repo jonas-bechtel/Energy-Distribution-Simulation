@@ -7,6 +7,8 @@ Energy Distribution Model/screenshots
 Energy Distribution Model/output
 Energy Distribution Model/input
 Energy Distribution Model/temp
+Energy Distribution Model/vendor/root*
+vendor/root*
 
 # data Files
 *.asc
