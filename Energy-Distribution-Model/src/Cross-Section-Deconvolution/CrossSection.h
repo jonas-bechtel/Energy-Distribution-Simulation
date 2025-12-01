@@ -67,7 +67,7 @@ public:
 private:
 	double ConvolveFit(double Ed, double* csBins, const EnergyDistributionSet& set,
 		bool squareCS = true,
-		std::unordered_map<double, EnergyDistribution*>& map = std::unordered_map<double, EnergyDistribution*>()) const;
+		std::unordered_map<double, EnergyDistribution*>* map = nullptr) const;
 	void FitWithSVD(const RateCoefficient& rc, const EnergyDistributionSet& set);
 	void FitWithROOT(const RateCoefficient& rc, const EnergyDistributionSet& set, const FittingOptions& fitSettings);
 	void FitWithEigenNNLS(const RateCoefficient& rc, const EnergyDistributionSet& set, const FittingOptions& fitSettings);

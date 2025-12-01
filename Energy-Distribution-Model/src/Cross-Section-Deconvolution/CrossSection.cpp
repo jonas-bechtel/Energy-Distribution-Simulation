@@ -157,20 +157,20 @@ void CrossSection::SetInitialGuessValues(const RateCoefficient& rc)
 }
 
 double CrossSection::ConvolveFit(double Ed, double* csBins, const EnergyDistributionSet& set, bool squareCS,
-	std::unordered_map<double, EnergyDistribution*>& map) const
+	std::unordered_map<double, EnergyDistribution*>* map) const
 {
 	double sum = 0;
 	const EnergyDistribution* distribution = nullptr;
 
 	//check if Ed is in map
-	if (map.find(Ed) != map.end())
+	if (map && map->find(Ed) != map->end())
 	{
-		distribution = map.at(Ed);
+		distribution = map->at(Ed);
 	}
 	else
 	{
 		distribution = set.FindByEd(Ed);
-		map.insert({ Ed, const_cast<EnergyDistribution*>(distribution) });
+		if(map) map->insert({ Ed, const_cast<EnergyDistribution*>(distribution) });
 	}
 	
 	if (distribution == nullptr)
@@ -229,7 +229,7 @@ void CrossSection::FitWithROOT(const RateCoefficient& rc, const EnergyDistributi
 	TF1 fitFunction("fit function", 
 		[this, &set, &EdToDistMap](double* x, double* p)
 		{
-			return this->ConvolveFit(x[0], p, set, true, EdToDistMap);
+			return this->ConvolveFit(x[0], p, set, true, &EdToDistMap);
 		}, 
 		0, 100, hist->GetNbinsX());
 
