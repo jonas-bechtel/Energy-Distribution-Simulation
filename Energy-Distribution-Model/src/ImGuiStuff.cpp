@@ -71,6 +71,9 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 #else
 #include <SDL_opengl.h>
 #endif
+static SDL_Window* window;
+static SDL_GLContext gl_context;
+
 #endif
 
 
@@ -104,7 +107,7 @@ void InitImGui()
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_GAMECONTROLLER) != 0)
     {
         printf("Error: %s\n", SDL_GetError());
-        return -1;
+        return;
     }
 
     // Decide GL+GLSL versions
@@ -148,18 +151,18 @@ void InitImGui()
     SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
     SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
     SDL_WindowFlags window_flags = (SDL_WindowFlags)(SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
-    SDL_Window* window = SDL_CreateWindow("Dear ImGui SDL2+OpenGL3 example", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280, 720, window_flags);
+    window = SDL_CreateWindow("Dear ImGui SDL2+OpenGL3 example", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280, 720, window_flags);
     if (window == nullptr)
     {
         printf("Error: SDL_CreateWindow(): %s\n", SDL_GetError());
-        return -1;
+        return;
     }
 
-    SDL_GLContext gl_context = SDL_GL_CreateContext(window);
+    gl_context = SDL_GL_CreateContext(window);
     if (gl_context == nullptr)
     {
         printf("Error: SDL_GL_CreateContext(): %s\n", SDL_GetError());
-        return -1;
+        return;
     }
 
     SDL_GL_MakeCurrent(window, gl_context);
@@ -342,6 +345,7 @@ void RenderImGuiFrame()
 #else
     // Rendering
     ImGui::Render();
+    ImGuiIO& io = ImGui::GetIO(); (void)io;
     glViewport(0, 0, (int)io.DisplaySize.x, (int)io.DisplaySize.y);
     //glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
     glClear(GL_COLOR_BUFFER_BIT);
