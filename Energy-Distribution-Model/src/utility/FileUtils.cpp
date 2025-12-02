@@ -10,19 +10,19 @@
 
 namespace FileUtils
 {
-    static std::filesystem::path inputFolder = "input\\";
-    static std::filesystem::path measuredRateCoefficientFolder = inputFolder / "Rate-Coefficients\\";
-    static std::filesystem::path measuredCoolingForceCurveFolder = inputFolder / "Measured-Cooling-Force-Curves\\";
-    static std::filesystem::path model3D_Folder = inputFolder / "3D-Models\\";
+    static std::filesystem::path inputFolder = "input";
+    static std::filesystem::path measuredRateCoefficientFolder = inputFolder / "Rate-Coefficients/";
+    static std::filesystem::path measuredCoolingForceCurveFolder = inputFolder / "Measured-Cooling-Force-Curves/";
+    static std::filesystem::path model3D_Folder = inputFolder / "3D-Models/";
 
-    static std::filesystem::path outputFolder = "output\\";
-    static std::filesystem::path plasmaRateFolder = outputFolder / "Plasma-Rate-Coefficients\\";
-    static std::filesystem::path crossSectionFolder = outputFolder / "Cross-Sections\\";
-    static std::filesystem::path rateCoefficientFolder = outputFolder / "Rate-Coefficients\\";
-    static std::filesystem::path energyDistSetFolder = outputFolder / "Energy-Distribution-Sets\\";
-    static std::filesystem::path coolingForceCurveFolder = outputFolder / "Cooling-Force-Curves\\";
-    static std::filesystem::path model3D_CoolingForceCurveFolder = coolingForceCurveFolder / "3D-Model\\";
-    static std::filesystem::path simpleModelCoolingForceCurveFolder = coolingForceCurveFolder / "Simple-Model\\";
+    static std::filesystem::path outputFolder = "output";
+    static std::filesystem::path plasmaRateFolder = outputFolder / "Plasma-Rate-Coefficients/";
+    static std::filesystem::path crossSectionFolder = outputFolder / "Cross-Sections/";
+    static std::filesystem::path rateCoefficientFolder = outputFolder / "Rate-Coefficients/";
+    static std::filesystem::path energyDistSetFolder = outputFolder / "Energy-Distribution-Sets";
+    static std::filesystem::path coolingForceCurveFolder = outputFolder / "Cooling-Force-Curves";
+    static std::filesystem::path model3D_CoolingForceCurveFolder = coolingForceCurveFolder / "3D-Model";
+    static std::filesystem::path simpleModelCoolingForceCurveFolder = coolingForceCurveFolder / "Simple-Model/";
 
     static int headerSize = 9;
     static std::string xDelimiter = "\t";
@@ -94,7 +94,6 @@ namespace FileUtils
 
     std::filesystem::path SelectFile(const std::filesystem::path& startPath, const std::vector<const char*>& filterPatterns)
     {
-        //const char* filterPatterns[] = { "*.asc" };
         const char* filePath = tinyfd_openFileDialog(
             "Choose a file",               // Dialog title
             startPath.string().c_str(),    // Default path or file

@@ -58,9 +58,9 @@ namespace EnergyDistributionWindow
 	{
 		AnalyticalDistribution::Update();
 
-		currentDescriptionFile = std::filesystem::path("input\\3D Models\\C60\\dataset1\\100x100x100_Ie0.95_Ucath44.2_RelTol0_mbrc1_energies.asc");
+		currentDescriptionFile = std::filesystem::path("input/3D Models/C60/dataset1/100x100x100_Ie0.95_Ucath44.2_RelTol0_mbrc1_energies.asc");
 		//EnergyDistributionSet set;
-		//set.Load(FileUtils::GetEnergyDistSetFolder() / "C60\\Ie_0.2547 (103 steps)" / "Tperp_1.5_Eext_0.266_test", true);
+		//set.Load(FileUtils::GetEnergyDistSetFolder() / "C60/Ie_0.2547 (103 steps)" / "Tperp_1.5_Eext_0.266_test", true);
 		//setList.emplace_back(std::move(set));
 		//currentSetIndex = setList.size() - 1;
 		

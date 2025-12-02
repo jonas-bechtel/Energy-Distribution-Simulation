@@ -31,7 +31,7 @@ namespace CoolingForce
 
 	void Init()
 	{
-		currentDescriptionFile = std::filesystem::path("input\\3D-Models\\C60\\C60 0.012 peak\\100x100x100_Ie0.012_Ucath44.2_RelTol0_Ni0_mbrc2_energies.asc");
+		currentDescriptionFile = std::filesystem::path("input/3D-Models/C60/C60 0.012 peak/100x100x100_Ie0.012_Ucath44.2_RelTol0_Ni0_mbrc2_energies.asc");
 		maxIndex = FileUtils::GetMaxIndex(currentDescriptionFile);
 	}
 
@@ -248,7 +248,7 @@ namespace CoolingForce
 			ImGui::Separator();
 			if (ImGui::Button("load 3D model curve"))
 			{
-				std::filesystem::path folder = FileUtils::SelectFolder(FileUtils::GetCoolingForceCurveFolder());
+				std::filesystem::path folder = FileUtils::SelectFolder(FileUtils::Get3D_ModelCoolingForceCurveFolder());
 				if (!folder.empty())
 				{
 					CreateNewCurve();
