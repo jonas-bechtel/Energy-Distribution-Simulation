@@ -4,7 +4,7 @@
 #include "LabEnergies.h"
 #include "Constants.h"
 #include "FileUtils.h"
-#include "ROOTcanvas.h"
+#include "ROOTCanvas.h"
 #include "HeatMapData.h"
 #include "HistUtils.h"
 #include <ImGuiUtils.h>
