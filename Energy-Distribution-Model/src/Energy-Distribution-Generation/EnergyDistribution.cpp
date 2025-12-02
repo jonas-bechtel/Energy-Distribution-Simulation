@@ -318,7 +318,7 @@ void EnergyDistribution::CalculateFWHM()
 
 	if (std::abs(energyOfMaxValue - eBeamParameter.detuningEnergy) > 1)
 	{
-		std::cout << "maximum value position and detuning energy do not match: " << energyOfMaxValue << " != " << eBeamParameter.detuningEnergy << std::endl;
+		std::cout << "maximum value position and detuning energy do not match: " << energyOfMaxValue << " != " << eBeamParameter.detuningEnergy.get() << std::endl;
 	}
 
 	double energyRight;
