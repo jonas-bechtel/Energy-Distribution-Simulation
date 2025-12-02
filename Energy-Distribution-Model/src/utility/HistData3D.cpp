@@ -2,7 +2,6 @@
 #include "HistData3D.h"
 
 #include "ElectronBeam.h"
-#include <ROOTCanvas.h>
 
 int HistData3D::rebinningFactors[3] = { 10, 10, 10 };
 

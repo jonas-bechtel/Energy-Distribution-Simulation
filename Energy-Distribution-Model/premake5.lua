@@ -79,6 +79,21 @@ project "Energy-Distribution-Model"
 
 		filter "configurations:Release"
 			debugcommand ("$(SolutionDir)scripts/run.bat")
+
+	filter "system:linux"
+		systemversion "latest"
+		pic "On"
+
+		includedirs
+		{
+			"/usr/include/SDL2"
+		}
+
+		links 
+		{
+			"SDL2",
+			"GL"
+    	}
     
 
 	filter "configurations:Debug"
