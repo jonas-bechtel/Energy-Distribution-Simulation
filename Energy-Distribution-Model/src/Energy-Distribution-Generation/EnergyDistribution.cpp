@@ -892,7 +892,7 @@ void PeakFitSettings::ShowWindow(bool& show)
 		{
 			ImGui::PushID(i);
 			ImGui::BeginGroup();
-			ImGui::Text(("fit " + std::to_string(i + 1)).c_str());
+			ImGui::Text("fit %d", i + 1);
 			ImGui::Checkbox("free E_d", &freeDetuningEnergy[i]);
 			ImGui::Checkbox("free kT_long", &freekT_long[i]);
 			ImGui::Checkbox("free kT_trans", &freeKT_trans[i]);
