@@ -125,7 +125,8 @@ namespace CoolingForce
 				if (!currentCurve.IsSimpleModel())
 				{
 					std::string str = currentCurve.GetSubfolder().string();
-					if (ImGuiUtils::InputText("bla", &str))
+					ImGui::SetNextItemWidth(150.0f);
+					if (ImGuiUtils::InputText("curve subfolder", &str))
 					{
 						currentCurve.SetSubfolder(std::filesystem::path(str));
 					}

@@ -13,6 +13,7 @@
 #include "FileUtils.h"
 
 #include "CoolingForceModel.h"
+#include <ImGuiUtils.h>
 
 namespace EnergyDistributionWindow
 {
@@ -189,13 +190,22 @@ namespace EnergyDistributionWindow
 			if (!setList.empty())
 			{
 				EnergyDistributionSet& currentSet = setList.at(currentSetIndex);
-				char buf[64] = "";
-				strncpy_s(buf, currentSet.GetSubfolder().string().c_str(), sizeof(buf) - 1);
+
+				std::string str = currentSet.GetSubfolder().string();
 				ImGui::SetNextItemWidth(250.0f);
-				if (ImGui::InputText("set subfolder", buf, IM_ARRAYSIZE(buf)))
+				if (ImGuiUtils::InputText("set subfolder", &str))
 				{
-					currentSet.SetSubfolder(std::filesystem::path(buf));
+					currentSet.SetSubfolder(std::filesystem::path(str));
 				}
+
+				
+				//char buf[64] = "";
+				//strncpy_s(buf, currentSet.GetSubfolder().string().c_str(), sizeof(buf) - 1);
+				//ImGui::SetNextItemWidth(250.0f);
+				//if (ImGui::InputText("set subfolder", buf, IM_ARRAYSIZE(buf)))
+				//{
+				//	currentSet.SetSubfolder(std::filesystem::path(buf));
+				//}
 			}
 
 			ImGui::Separator();
