@@ -71,6 +71,7 @@ project "Energy-Distribution-Model"
 			"libMatrix",
 			"libMathCore",
 			"libPhysics",
+			"libGui",
 
 			"d3d12",
 			"d3dcompiler",
@@ -115,6 +116,7 @@ project "Energy-Distribution-Model"
 			"Matrix",
 			"MathCore",
 			"Physics",
+			"Gui",
 
 			"SDL2",
 			"GL"
