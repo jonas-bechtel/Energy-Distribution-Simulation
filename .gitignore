@@ -9,6 +9,7 @@ Energy-Distribution-Model/input
 Energy-Distribution-Model/temp
 Energy-Distribution-Model/vendor/root*
 vendor/root*
+**/temp
 
 # data Files
 *.asc
