@@ -134,7 +134,7 @@ void RateCoefficient::Clear()
 	crossSectionFile.clear();
 }
 
-void RateCoefficient::Load(std::filesystem::path& filename)
+void RateCoefficient::Load(const std::filesystem::path& filename)
 {
 	std::ifstream file(filename);
 

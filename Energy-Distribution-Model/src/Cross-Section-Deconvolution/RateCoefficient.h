@@ -25,7 +25,7 @@ public:
 	void PlotSubfunctions() const;
 
 	void Clear();
-	void Load(std::filesystem::path& file);
+	void Load(const std::filesystem::path& file);
 	void Save() const;
 
 private:
