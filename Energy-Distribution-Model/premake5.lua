@@ -45,16 +45,7 @@ project "Energy-Distribution-Model"
 		"implot",
 		"tinyfiledialogs",
 		"JSPEC",
-		"Betacool",
-		"libCore",
-		"libRIO",
-		"libHist",
-		"libGpad",
-		"libGraf",
-		"libGraf3d",
-		"libMatrix",
-		"libMathCore",
-		"libPhysics"
+		"Betacool"
 	}
 
 	filter "system:windows"
@@ -62,6 +53,16 @@ project "Energy-Distribution-Model"
 
 		links
 		{
+			"libCore",
+			"libRIO",
+			"libHist",
+			"libGpad",
+			"libGraf",
+			"libGraf3d",
+			"libMatrix",
+			"libMathCore",
+			"libPhysics",
+
 			"d3d12",
 			"d3dcompiler",
 			"dxgi"
@@ -91,6 +92,16 @@ project "Energy-Distribution-Model"
 
 		links 
 		{
+			"Core",
+			"RIO",
+			"Hist",
+			"Gpad",
+			"Graf",
+			"Graf3d",
+			"Matrix",
+			"MathCore",
+			"Physics",
+
 			"SDL2",
 			"GL"
     	}
