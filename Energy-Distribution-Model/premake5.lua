@@ -45,11 +45,20 @@ project "Energy-Distribution-Model"
 		"implot",
 		"tinyfiledialogs",
 		"JSPEC",
-		"Betacool"
+		"Betacool",
+
+		"gsl"
+        --"gslcblas"
+        --"muparser"
 	}
 
 	filter "system:windows"
 		systemversion "latest"
+
+		libdirs
+        {
+            "%{wks.location}/Energy-Distribution-Model/vendor/JSPEC/lib"
+        }
 
 		links
 		{
@@ -89,6 +98,11 @@ project "Energy-Distribution-Model"
 		{
 			"/usr/include/SDL2"
 		}
+
+		libdirs
+        {
+            "/usr/lib/x86_64-linux-gnu"
+        }
 
 		links 
 		{
