@@ -282,7 +282,7 @@ namespace CoolingForce
 			return;
 		}
 
-		std::filesystem::path outfolder = FileUtils::GetCoolingForceCurveFolder() / folder / subFolder;
+		std::filesystem::path outfolder = FileUtils::Get3D_ModelCoolingForceCurveFolder() / folder / subFolder;
 
 		if (!std::filesystem::exists(outfolder))
 		{

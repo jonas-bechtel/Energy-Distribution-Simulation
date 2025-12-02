@@ -3,11 +3,11 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/main/VisualStudio.gitignore
 
-Energy Distribution Model/screenshots
-Energy Distribution Model/output
-Energy Distribution Model/input
-Energy Distribution Model/temp
-Energy Distribution Model/vendor/root*
+Energy-Distribution-Model/screenshots
+Energy-Distribution-Model/output
+Energy-Distribution-Model/input
+Energy-Distribution-Model/temp
+Energy-Distribution-Model/vendor/root*
 vendor/root*
 
 # data Files

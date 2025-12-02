@@ -3,6 +3,7 @@
 #include "CoolingForceModel.h"
 #include "CoolingForceCurve.h"
 #include "FileUtils.h"
+#include "ImGuiUtils.h"
 
 namespace CoolingForce
 {
@@ -30,7 +31,7 @@ namespace CoolingForce
 
 	void Init()
 	{
-		currentDescriptionFile = std::filesystem::path("input\\3D Models\\C60\\C60 0.012 peak\\100x100x100_Ie0.012_Ucath44.2_RelTol0_Ni0_mbrc2_energies.asc");
+		currentDescriptionFile = std::filesystem::path("input\\3D-Models\\C60\\C60 0.012 peak\\100x100x100_Ie0.012_Ucath44.2_RelTol0_Ni0_mbrc2_energies.asc");
 		maxIndex = FileUtils::GetMaxIndex(currentDescriptionFile);
 	}
 
@@ -123,13 +124,19 @@ namespace CoolingForce
 				ImGui::BeginDisabled(currentCurve.IsMeasured());
 				if (!currentCurve.IsSimpleModel())
 				{
-					char buf[64] = "";
-					strncpy_s(buf, currentCurve.GetSubfolder().string().c_str(), sizeof(buf) - 1);
-					ImGui::SetNextItemWidth(150.0f);
-					if (ImGui::InputText("curve subfolder", buf, IM_ARRAYSIZE(buf)))
+					std::string str = currentCurve.GetSubfolder().string();
+					if (ImGuiUtils::InputText("bla", &str))
 					{
-						currentCurve.SetSubfolder(std::filesystem::path(buf));
+						currentCurve.SetSubfolder(std::filesystem::path(str));
 					}
+
+					//char buf[64] = "";
+					//strncpy_s(buf, currentCurve.GetSubfolder().string().c_str(), sizeof(buf) - 1);
+					//ImGui::SetNextItemWidth(150.0f);
+					//if (ImGui::InputText("curve subfolder", buf, IM_ARRAYSIZE(buf)))
+					//{
+					//	currentCurve.SetSubfolder(std::filesystem::path(buf));
+					//}
 					ImGui::SameLine();
 				}
 				if (ImGui::Button("save"))
