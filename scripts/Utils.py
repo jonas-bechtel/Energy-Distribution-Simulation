@@ -11,6 +11,19 @@ def DownloadFile(url, filepath):
     path = filepath
     filepath = os.path.abspath(filepath)
     os.makedirs(os.path.dirname(filepath), exist_ok=True)
+
+    http_proxy = os.getenv('http_proxy')
+    https_proxy = os.getenv('https_proxy')
+    
+    if http_proxy or https_proxy:
+        print(f"Using proxy: {http_proxy or https_proxy}")
+        proxies = {
+            'http': http_proxy,
+            'https': https_proxy
+        }
+    else:
+        print("No proxy detected, using direct connection")
+        proxies = None
             
     if (type(url) is list):
         for url_option in url:
@@ -37,7 +50,7 @@ def DownloadFile(url, filepath):
     
     with open(filepath, 'wb') as f:
         headers = {'User-Agent': "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.97 Safari/537.36"}
-        response = requests.get(url, headers=headers, stream=True)
+        response = requests.get(url, headers=headers, stream=True, proxies=proxies)
         total = response.headers.get('content-length')
 
         if total is None:

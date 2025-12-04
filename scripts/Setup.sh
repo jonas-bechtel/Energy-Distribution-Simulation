@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
 
 cd "$(dirname "$0")"
-sudo python3 Setup.py
+sudo -E python3 Setup.py
