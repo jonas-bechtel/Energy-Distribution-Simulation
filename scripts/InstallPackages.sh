@@ -8,6 +8,7 @@ PACKAGES=(
     "libgsl-dev"
     "libgif-dev"
     "libxft2"
+    "libtbb-dev"
 )
 
 # Install packages
