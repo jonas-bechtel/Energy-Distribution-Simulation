@@ -1,5 +1,8 @@
 #pragma once
 #include "pch.h"
+#define FMT_UNICODE 0
+#define FMT_HEADER_ONLY
+#include <fmt/format.h>
 
 using Path = std::filesystem::path;
 
@@ -276,19 +279,10 @@ public:
 	}
 
 private:
-	template <typename T, typename... Args>
-	std::string createLine(const std::string& format, const T& value1, const Args&... args) const
+	template <typename... Args>
+	std::string createLine(std::string_view fmt, Args&&... args) const 
 	{
-		std::ostringstream oss;
-		oss << format << value1;
-		// expand the pack recursively
-		(void)std::initializer_list<int>{ (oss << args, 0)... };
-		return oss.str();
-
-
-		//char buffer[100];
-		//std::snprintf(buffer, format.c_str(), value1, args...);
-		//return std::string(buffer);
+		return fmt::format(fmt, std::forward<Args>(args)...);
 	}
 
 	void* getParameterValue(const std::string& name)
