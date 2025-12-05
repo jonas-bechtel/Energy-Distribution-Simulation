@@ -120,7 +120,8 @@ project "Energy-Distribution-Model"
 			"Gui",
 
 			"SDL2",
-			"GL"
+			"GL",
+			"tbb"
     	}
     
 
