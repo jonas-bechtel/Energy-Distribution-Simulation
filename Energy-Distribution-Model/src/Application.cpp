@@ -106,9 +106,6 @@ void Application::ShowWindows()
     }
     ImGui::End();
 
-    
-    
-
     if(settings.showImGuiDemoWindow)
         ImGui::ShowDemoWindow(&settings.showImGuiDemoWindow);
     if (settings.showImPlotDemoWindow)
@@ -120,6 +117,30 @@ void Application::ShowWindows()
 
 void Application::Shutdown()
 {
+    // Close ROOT canvases first to ensure their native windows are destroyed
+    // before we tear down ImGui / DirectX resources. This prevents TRootCanvas
+    // callbacks/destructors from touching already-destroyed Win32/DX objects.
+    if (gROOT && gROOT->GetListOfCanvases())
+    {
+        TIter next(gROOT->GetListOfCanvases());
+        TCanvas* c = nullptr;
+        while ((c = static_cast<TCanvas*>(next())))
+        {
+            // Close removes the TRootCanvas window and should avoid dangling window handles.
+            try
+            {
+                c->Close();
+            }
+            catch (...)
+            {
+                // swallow exceptions to continue cleanup
+            }
+        }
+
+        // Give ROOT a chance to process the window close events synchronously.
+        gSystem->ProcessEvents();
+    }
+
 	ShutdownImGui();
 }
 

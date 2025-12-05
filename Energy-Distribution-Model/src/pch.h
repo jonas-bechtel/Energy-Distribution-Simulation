@@ -42,6 +42,7 @@
 #include <TDecompSVD.h>
 #include <TRandom3.h>
 #include <TFile.h>
+#include <TROOT.h>
 
 #include "imgui.h"
 #include "implot.h"

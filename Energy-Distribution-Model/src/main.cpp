@@ -8,5 +8,8 @@ int main(int argc, char** argv)
 
     Application::Init();
     Application::Run();
+	std::cout << "Shutting down application..." << std::endl;
     Application::Shutdown();
+	std::cout << "Application closed successfully." << std::endl;
+   
 }
