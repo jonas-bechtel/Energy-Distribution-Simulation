@@ -31,6 +31,7 @@ project "Energy-Distribution-Model"
 		"%{wks.location}/Energy-Distribution-Model/vendor/tinyfiledialogs",
 		"%{wks.location}/Energy-Distribution-Model/vendor/JSPEC/include",
 		"%{wks.location}/Energy-Distribution-Model/vendor/Betacool/src",
+		"%{wks.location}/Energy-Distribution-Model/vendor/fmt-12.1.0/include",
 		"%{wks.location}/vendor/root_v6.32.04/include"
 	}
 

@@ -5,11 +5,17 @@ struct MCMC_Parameters : public Parameters
 {
 	MCMC_Parameters() { setName("mcmc sampling parameters"); }
 
-	ParameterValue<int> numberSamples = ParameterValue((int)3e5, "number of samples", "%d");
-	ParameterValue<int> burnIn = ParameterValue(1000, "burn in", "%d");
-	ParameterValue<int> lag = ParameterValue(30, "lag", "%d");
-	ParameterValue<float3> proposalSigma = ParameterValue(float3(0.005f, 0.005f, 0.2f), "proposal sigmas", "%.4f, %.4f, %.3f m");
-	ParameterValue<int> seed = ParameterValue((int)std::time(0), "seed", "%d");
+	//ParameterValue<int> numberSamples = ParameterValue((int)3e5, "number of samples", "%d");
+	//ParameterValue<int> burnIn = ParameterValue(1000, "burn in", "%d");
+	//ParameterValue<int> lag = ParameterValue(30, "lag", "%d");
+	//ParameterValue<float3> proposalSigma = ParameterValue(float3(0.005f, 0.005f, 0.2f), "proposal sigmas", "%.4f, %.4f, %.3f m");
+	//ParameterValue<int> seed = ParameterValue((int)std::time(0), "seed", "%d");
+
+	ParameterValue<int> numberSamples = ParameterValue((int)3e5, "number of samples", "{}");
+	ParameterValue<int> burnIn = ParameterValue(1000, "burn in", "{}");
+	ParameterValue<int> lag = ParameterValue(30, "lag", "{}");
+	ParameterValue<float3> proposalSigma = ParameterValue(float3(0.005f, 0.005f, 0.2f),	"proposal sigmas", "{:.4f}, {:.4f}, {:.3f} m");
+	ParameterValue<int> seed = ParameterValue((int)std::time(0), "seed", "{}");
 
 private:
 	int GetSize() const override
@@ -25,24 +31,24 @@ struct ElectronBeamParameters : public Parameters
 		setName("electron beam parameters");
 	}
 
-	ParameterValue<double> detuningEnergy = ParameterValue(10.0, "detuning energy", "%.6e eV");
-	ParameterValue<double> detuningVelocity = ParameterValue(10.0, "detuning velocity", "%.2f m/s");
+	ParameterValue<double> detuningEnergy = ParameterValue(10.0, "detuning energy", "{:.6e} eV");
+	ParameterValue<double> detuningVelocity = ParameterValue(10.0, "detuning velocity", "{:.2f} m/s");
 
-	ParameterValue<double> transverse_kT = ParameterValue(2.0e-3, "transverse kT", "%.2e eV");
-	ParameterValue<double> longitudinal_kT_estimate = ParameterValue(0.0, "estimated longitudinal kT", "%.2e eV");
-	ParameterValue<double> coolingEnergy = ParameterValue(0.15263, "cooling energy", "%.6e eV");
-	ParameterValue<double> cathodeRadius = ParameterValue(0.0012955, "cathode radius", "%.3e m");
-	ParameterValue<double> expansionFactor = ParameterValue(30.0, "expansion factor", "%.1f");
+	ParameterValue<double> transverse_kT = ParameterValue(2.0e-3, "transverse kT", "{:.2e} eV");
+	ParameterValue<double> longitudinal_kT_estimate = ParameterValue(0.0, "estimated longitudinal kT", "{:.2e} eV");
+	ParameterValue<double> coolingEnergy = ParameterValue(0.15263, "cooling energy", "{:.6e} eV");
+	ParameterValue<double> cathodeRadius = ParameterValue(0.0012955, "cathode radius", "{:.3e} m");
+	ParameterValue<double> expansionFactor = ParameterValue(30.0, "expansion factor", "{:.1f}");
 
-	ParameterValue<double> electronCurrent = ParameterValue(1.2e-08, "electron current", "%.2e A");
-	ParameterValue<double> cathodeTemperature = ParameterValue(300.0, "cathode tempperature", "%.1f K");
-	//ParameterValue<double> Ecath = ParameterValue(0.0, "cathode energy", "%.3e eV");
-	ParameterValue<double> LLR = ParameterValue(1.9, "LLR", "%.1f");
+	ParameterValue<double> electronCurrent = ParameterValue(1.2e-08, "electron current", "{:.2e} A");
+	ParameterValue<double> cathodeTemperature = ParameterValue(300.0, "cathode tempperature", "{:.1f} K");
+	ParameterValue<double> LLR = ParameterValue(1.9, "LLR", "{:.1f}");
+
 	// sigma of gaussian spread of the acceleration voltage (Elab) [eV]
-	ParameterValue<double> sigmaLabEnergy = ParameterValue(0.0, "sigma lab energy", "%.3f eV");
-	ParameterValue<double> extractionEnergy = ParameterValue(31.26, "extraction energy", "%.3f eV");
+	ParameterValue<double> sigmaLabEnergy = ParameterValue(0.0, "sigma lab energy", "{:.3f} eV");
+	ParameterValue<double> extractionEnergy = ParameterValue(31.26, "extraction energy", "{:.3f} eV");
 
-	ParameterValue<Path> densityFile = ParameterValue(Path(""), "density file", "%s");
+	ParameterValue<Path> densityFile = ParameterValue(Path(""), "density file", "{}");
 
 private:
 	int GetSize() const override
@@ -55,9 +61,9 @@ struct LabEnergyParameters : public Parameters
 {
 	LabEnergyParameters() { setName("lab energy parameters"); }
 
-	ParameterValue<double> centerLabEnergy = ParameterValue(0.0, "lab energy in center", "%e eV");
-	ParameterValue<double> driftTubeVoltage = ParameterValue(0.0, "drift tube voltage", "%e V");
-	ParameterValue<Path> energyFile = ParameterValue(Path(""), "energy file", "%s");
+	ParameterValue<double> centerLabEnergy = ParameterValue(0.0, "lab energy in center", "{:e} eV");
+	ParameterValue<double> driftTubeVoltage = ParameterValue(0.0, "drift tube voltage", "{:e} V");
+	ParameterValue<Path> energyFile = ParameterValue(Path(""), "energy file", "{}");
 
 private:
 	int GetSize() const override
@@ -73,12 +79,12 @@ struct IonBeamParameters : public Parameters
 		setName("ion beam parameters");
 	}
 
-	ParameterValue<float2> shift = ParameterValue(float2(0.0f, 0.0f), "shift in x and y", "%.4f, %.4f m");
-	ParameterValue<float2> angles = ParameterValue(float2(0.0f, 0.0f), "horizontal, vertical angle", "%.4f, %.4f rad");
+	ParameterValue<float2> shift = ParameterValue(float2(0.0f, 0.0f), "shift in x and y", "{:.4f}, {:.4f} m");
+	ParameterValue<float2> angles = ParameterValue(float2(0.0f, 0.0f), "horizontal, vertical angle", "{:.4f}, {:.4f} rad");
 
 	// always one gaussian
-	ParameterValue<double> amplitude = ParameterValue(10.1, "amplitude", "%.4f");
-	ParameterValue<float2> sigma = ParameterValue(float2(0.01044, 0.00455), "sigmas (x,y)", "%.4f, %.4f m");
+	ParameterValue<double> amplitude = ParameterValue(10.1, "amplitude", "{:.4f}");
+	ParameterValue<float2> sigma = ParameterValue(float2(0.01044, 0.00455), "sigmas (x,y)", "{:.4f}, {:.4f} m");
 
 private:
 	int GetSize() const override
@@ -94,17 +100,17 @@ struct OutputParameters : public Parameters
 		setName("analytical/fit distribution parameters");
 	}
 
-	ParameterValue<float2> fitRange = ParameterValue(float2(0.0f, 1.0f), "fit range", "%.4e, %.4e eV");
-	ParameterValue<double> fitDetuningEnergy = ParameterValue(1.0, "fit detuning energy", "%.6e eV");
-	ParameterValue<double> fitLongitudinalTemperature = ParameterValue(0.0005, "fit longitudinal kT", "%.2e eV");
-	ParameterValue<double> fitTransverseTemperature = ParameterValue(0.002, "fit transverse kT", "%.2e eV");
-	ParameterValue<double> fitFWHM = ParameterValue(0.0, "fit FWHM", "%.4f eV");
-	ParameterValue<double> fitScalingFactor = ParameterValue(0.0, "fit scaling factor", "%.3f");
-	ParameterValue<double> effectiveLength = ParameterValue(0.0, "effective length", "%.3f m");
+	ParameterValue<float2> fitRange = ParameterValue(float2(0.0f, 1.0f), "fit range", "{:.4e}, {:.4e} eV");
+	ParameterValue<double> fitDetuningEnergy = ParameterValue(1.0, "fit detuning energy", "{:.6e} eV");
+	ParameterValue<double> fitLongitudinalTemperature = ParameterValue(0.0005, "fit longitudinal kT", "{:.2e} eV");
+	ParameterValue<double> fitTransverseTemperature = ParameterValue(0.002, "fit transverse kT", "{:.2e} eV");
+	ParameterValue<double> fitFWHM = ParameterValue(0.0, "fit FWHM", "{:.4f} eV");
+	ParameterValue<double> fitScalingFactor = ParameterValue(0.0, "fit scaling factor", "{:.3f}");
+	ParameterValue<double> effectiveLength = ParameterValue(0.0, "effective length", "{:.3f} m");
 
-	ParameterValue<double> FWHM = ParameterValue(0.0, "FWHM", "%.4f eV");
-	ParameterValue<double> mainPeakPosition = ParameterValue(0.0, "main peak position", "%.3e eV");
-	ParameterValue<float2> distancesFWHM = ParameterValue(float2(0.0f, 0.0f), "FWHM distances (left/right)", "%.3e, %.3e eV");
+	ParameterValue<double> FWHM = ParameterValue(0.0, "FWHM", "{:.4f} eV");
+	ParameterValue<double> mainPeakPosition = ParameterValue(0.0, "main peak position", "{:.3e} eV");
+	ParameterValue<float2> distancesFWHM = ParameterValue(float2(0.0f, 0.0f), "FWHM distances (left/right)", "{:.3e}, {:.3e} eV");
 
 private:
 	int GetSize() const override
