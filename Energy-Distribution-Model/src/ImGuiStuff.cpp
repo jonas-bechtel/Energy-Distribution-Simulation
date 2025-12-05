@@ -79,6 +79,7 @@ static SDL_GLContext gl_context;
 
 void InitImGui()
 {
+    std::wstring programName = L"Energy Distribution Simulation";
 #ifdef _WIN32
     // Dear ImGui: standalone example application for DirectX 12
 
@@ -88,7 +89,7 @@ void InitImGui()
     //ImGui_ImplWin32_EnableDpiAwareness();
     wc = { sizeof(wc), CS_CLASSDC, WndProc, 0L, 0L, GetModuleHandle(nullptr), nullptr, nullptr, nullptr, nullptr, L"ImGui Example", nullptr };
     ::RegisterClassExW(&wc);
-    hwnd = ::CreateWindowW(wc.lpszClassName, L"Dear ImGui DirectX12 Example", WS_OVERLAPPEDWINDOW, 100, 100, 1500, 1000, nullptr, nullptr, wc.hInstance, nullptr);
+    hwnd = ::CreateWindowW(wc.lpszClassName, programName.c_str(), WS_OVERLAPPEDWINDOW, 100, 100, 1500, 1000, nullptr, nullptr, wc.hInstance, nullptr);
 
     // Initialize Direct3D
     if (!CreateDeviceD3D(hwnd))
@@ -145,13 +146,15 @@ void InitImGui()
 #ifdef SDL_HINT_IME_SHOW_UI
     SDL_SetHint(SDL_HINT_IME_SHOW_UI, "1");
 #endif
+    std::wstring_convert<std::codecvt_utf8<wchar_t>> conv;
+    std::string programNameLinux = conv.to_bytes(programName);
 
     // Create window with graphics context
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
     SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
     SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
     SDL_WindowFlags window_flags = (SDL_WindowFlags)(SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
-    window = SDL_CreateWindow("Dear ImGui SDL2+OpenGL3 example", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280, 720, window_flags);
+    window = SDL_CreateWindow(programNameLinux.c_str(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280, 720, window_flags);
     if (window == nullptr)
     {
         printf("Error: SDL_CreateWindow(): %s\n", SDL_GetError());
