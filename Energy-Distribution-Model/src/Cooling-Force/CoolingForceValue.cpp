@@ -198,6 +198,12 @@ namespace CoolingForce
 
 	void Value::Save(std::filesystem::path folder) const
 	{
+		if (!force3D.GetHist())
+		{
+			std::cout << "error: no histograms to save!" << std::endl;
+			return;
+		}
+
 		std::filesystem::path file = folder / (Filename() + ".root");
 
 		// Open a ROOT file for writing
@@ -206,7 +212,9 @@ namespace CoolingForce
 		{
 			std::cout << "error opening file: " << file << std::endl;
 		}
+		
 		TNamed header("header", GetHeaderString());
+		std::cout << GetHeaderString() << std::endl;
 		header.Write();
 
 		std::ostringstream value_ss;
@@ -227,6 +235,7 @@ namespace CoolingForce
 
 		// Read metadata
 		TNamed* header = (TNamed*)infile.Get("header");
+		std::cout << header->GetTitle() << std::endl;
 		if (header)
 		{
 			eBeamParameter.fromString(header->GetTitle());
@@ -240,7 +249,12 @@ namespace CoolingForce
 
 		// Retrieve histograms
 		force3D = HistData3D((TH3D*)infile.Get("forceLong"));
-
+		if(!force3D.GetHist())
+		{
+			// load old format
+			force3D = HistData3D((TH3D*)infile.Get("precalculated force"));
+		}
+		
 		// Check if histograms were loaded correctly
 		if (!(force3D.GetHist()))
 		{

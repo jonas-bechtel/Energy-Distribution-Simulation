@@ -321,7 +321,7 @@ namespace CoolingForce
 			return;
 		}
 
-		// loading mcmc generated cooling curve
+		// loading 3D model cooling curve
 		if (std::filesystem::is_directory(input))
 		{
 			for (const auto& entry : std::filesystem::directory_iterator(input))
