@@ -82,8 +82,8 @@ project "Energy-Distribution-Model"
 		postbuildcommands
 		{
 			'cmd /c if exist vendor\\JSPEC\\lib\\*.dll xcopy /Q /Y /I vendor\\JSPEC\\lib\\*.dll "%{cfg.targetdir}" > nul',
-			'{COPY} "%{cfg.buildtarget.relpath}" "..\\..\\Energy Distribution Model Release"',
-			'{COPY} "imgui.ini" "..\\..\\Energy Distribution Model Release"'
+			'cmd /c if exist "..\\..\\Energy Distribution Model Release" copy "%{cfg.buildtarget.relpath}" "..\\..\\Energy Distribution Model Release"',
+			'cmd /c if exist "..\\..\\Energy Distribution Model Release" copy "imgui.ini" "..\\..\\Energy Distribution Model Release"'
 		}
 
 		filter "configurations:Debug"
