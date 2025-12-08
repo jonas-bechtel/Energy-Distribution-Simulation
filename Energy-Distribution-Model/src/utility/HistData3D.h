@@ -49,7 +49,7 @@ public:
 	void PlotProjectionX(int labelModifier, ImPlotLineFlags_ flags = ImPlotLineFlags_None) const;
 	void PlotProjectionY(int labelModifier, ImPlotLineFlags_ flags = ImPlotLineFlags_None) const;
 	void PlotProjectionZ(int labelModifier, ImPlotLineFlags_ flags = ImPlotLineFlags_None) const;
-	void PlotInsideOutsideValue(int labelModifier) const;
+	void PlotElectronBeamCenterValue(int labelModifier, bool plotCornerValue = false) const;
 
 	static bool ShowRebinningFactorsInput();
 };

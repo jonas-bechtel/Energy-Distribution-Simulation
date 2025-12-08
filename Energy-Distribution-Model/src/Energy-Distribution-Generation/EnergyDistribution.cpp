@@ -448,7 +448,6 @@ void EnergyDistribution::FitAnalyticalToPeak(const PeakFitSettings& settings)
 
 void EnergyDistribution::Generate(std::filesystem::path descriptionFile, int index, const BinningSettings& binSettings, const PeakFitSettings& fitSettings)
 {
-	// get all necessary modules
 	std::filesystem::path folder = descriptionFile.parent_path();
 
 	// get 3 parameters: U drift tube, electron current, center E lab if index is in file

@@ -749,7 +749,7 @@ namespace ElectronBeam
 				ImPlot::SetupAxes("z", "value");
 				for (int i = 0; i < plotBeams.size(); i++)
 				{
-					plotBeams.at(i).PlotInsideOutsideValue(i);
+					plotBeams.at(i).PlotElectronBeamCenterValue(i);
 				}
 				ImPlot::EndPlot();
 			}

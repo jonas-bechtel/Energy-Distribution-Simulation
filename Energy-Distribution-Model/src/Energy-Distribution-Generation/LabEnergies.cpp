@@ -147,39 +147,15 @@ namespace LabEnergy
 		delete noSpaceChargeHist;
 		noSpaceChargeHist = new TH1D("no sc lab energy", "no sc lab energy", hist->GetNbinsZ(), hist->GetZaxis()->GetXmin(), hist->GetZaxis()->GetXmax());
 
-		int minBinX = 0;
-		int minBinY = 0;
-
-		// find the bin of minimum in the drift tube center
-		int nx = hist->GetNbinsX();
-		int ny = hist->GetNbinsY();
-		double minValue = std::numeric_limits<double>::max();
-
-		for (int ix = 1; ix <= nx; ix++)
+		int binInCenterX = hist->GetXaxis()->FindBin(0.0); 
+		for (int i = 1; i <= hist->GetNbinsZ(); i++)
 		{
-			for (int iy = 1; iy <= ny; iy++)
-			{
-				double val = hist->GetBinContent(ix, iy, 1);
-				if (val < minValue)
-				{
-					minValue = val;
-					minBinX = ix;
-					minBinY = iy;
-				}
-			}
-		}
-		
-		for (int iz = 1; iz <= hist->GetNbinsZ(); iz++)
-		{
-			// use that bin for all other slices
-			double value = hist->GetBinContent(minBinX, minBinY, iz);
-			noSpaceChargeHist->SetBinContent(iz, value);
-		}
+			double zValue = hist->GetZaxis()->GetBinCenter(i);
+			int binInCenterY = hist->GetYaxis()->FindBin(ElectronBeam::Trajectory(zValue));
 
-		// plot on a root canvas for debugging
-		TCanvas* c1 = new TCanvas("no sc lab energy", "no sc lab energy", 800, 600);
-		noSpaceChargeHist->Draw();
-
+			double energyValue = hist->GetBinContent(binInCenterX, binInCenterY, i);
+			noSpaceChargeHist->SetBinContent(i, energyValue);
+		}
 	}
 
 	TH3D* LoadLabEnergyFile(std::filesystem::path file)
@@ -379,7 +355,7 @@ namespace LabEnergy
 				ImPlot::SetupAxes("z", "value");
 				for (int i = 0; i < plotEnergies.size(); i++)
 				{
-					plotEnergies.at(i).PlotInsideOutsideValue(i);
+					plotEnergies.at(i).PlotElectronBeamCenterValue(i, true);
 				}
 				ImPlot::EndPlot();
 			}

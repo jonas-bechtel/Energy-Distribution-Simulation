@@ -146,7 +146,7 @@ void HistData3D::UpdateData()
 	delete projectionY;
 	delete projectionZ;
 
-	int binInCenterX = fullHistogram->GetNbinsX() / 2;
+	int binInCenterX = fullHistogram->GetXaxis()->FindBin(0.0);
 	for (int i = 1; i <= fullHistogram->GetNbinsZ(); i++)
 	{
 		double zValue = fullHistogram->GetZaxis()->GetBinCenter(i);
@@ -203,11 +203,12 @@ void HistData3D::PlotProjectionZ(int labelModifier, ImPlotLineFlags_ flags) cons
 	ImPlot::PlotLine(labelModified.c_str(), zAxis.data(), projectionValuesZ.data(), zAxis.size(), flags);
 }
 
-void HistData3D::PlotInsideOutsideValue(int labelModifier) const
+void HistData3D::PlotElectronBeamCenterValue(int labelModifier, bool plotCornerValue) const
 {
 	std::string labelModified = label + "##" + std::to_string(labelModifier);
 	ImPlot::PlotLine(labelModified.c_str(), zAxis.data(), centerValue.data(), zAxis.size());
-	ImPlot::PlotLine(labelModified.c_str(), zAxis.data(), outsideValue.data(), zAxis.size(), ImPlotLineFlags_Segments);
+	if (plotCornerValue)
+		ImPlot::PlotLine(labelModified.c_str(), zAxis.data(), outsideValue.data(), zAxis.size(), ImPlotLineFlags_Segments);
 }
 
 bool HistData3D::ShowRebinningFactorsInput()
