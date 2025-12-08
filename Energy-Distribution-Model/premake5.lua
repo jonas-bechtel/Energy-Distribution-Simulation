@@ -86,11 +86,11 @@ project "Energy-Distribution-Model"
 			'cmd /c if exist "..\\..\\Energy Distribution Model Release" copy "imgui.ini" "..\\..\\Energy Distribution Model Release"'
 		}
 
-		filter "configurations:Debug"
-			debugcommand ("$(SolutionDir)scripts/run-debug.bat")
-
-		filter "configurations:Release"
-			debugcommand ("$(SolutionDir)scripts/run.bat")
+		debugenvs
+		{ 
+			"ROOTSYS=%{wks.location}\\vendor\\root_v6.32.04",
+			"PATH=%{wks.location}\\vendor\\root_v6.32.04\\bin;%PATH%"
+		}
 
 	filter "system:linux"
 		systemversion "latest"
@@ -134,5 +134,6 @@ project "Energy-Distribution-Model"
 		defines "NDEBUG"
 		runtime "Release"
 		optimize "on"
+		symbols "on"
 
 	
