@@ -80,6 +80,7 @@ static SDL_GLContext gl_context;
 void InitImGui()
 {
     std::wstring programName = L"Energy Distribution Simulation";
+
 #ifdef _WIN32
     // Dear ImGui: standalone example application for DirectX 12
 
