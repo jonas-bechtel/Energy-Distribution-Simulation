@@ -48,6 +48,7 @@ EnergyDistribution::EnergyDistribution(EnergyDistribution&& other) noexcept
 	binCenters			= std::move(other.binCenters);
 	binValues			= std::move(other.binValues);
 	binValuesNormalised = std::move(other.binValuesNormalised);
+	binEdges			= std::move(other.binEdges);
 	fitX				= std::move(other.fitX);
 	fitY				= std::move(other.fitY);
 
@@ -82,6 +83,7 @@ EnergyDistribution& EnergyDistribution::operator=(EnergyDistribution&& other) no
 	binCenters = std::move(other.binCenters);
 	binValues = std::move(other.binValues);
 	binValuesNormalised = std::move(other.binValuesNormalised);
+	binEdges = std::move(other.binEdges);
 	fitX = std::move(other.fitX);
 	fitY = std::move(other.fitY);
 
@@ -144,7 +146,6 @@ void EnergyDistribution::SetupLabellingThings()
 void EnergyDistribution::SetupBinning(const BinningSettings& binSettings)
 {
 	int numberBins;
-	std::vector<double> binEdges;
 
 	double min = std::max(binSettings.energyRange[0], 1e-9f);
 	double max = binSettings.energyRange[1];
@@ -177,6 +178,7 @@ void EnergyDistribution::SetupBinning(const BinningSettings& binSettings)
 	//std::cout << "guess of bin number: " << numberBins << std::endl;
 	//std::cout << "estimate peak positions: " << firstPeak << ", " << secondPeak << std::endl;
 	//std::cout << "estimate peak widths: " << estimatedPeakWidth1 << ", " << estimatedPeakWidth2 << std::endl;
+	binEdges.clear();
 	binEdges.reserve(numberBins);
 	binEdges.push_back(0);
 	binEdges.push_back(min);
@@ -279,33 +281,35 @@ void EnergyDistribution::RemoveEdgeZeros()
 	std::vector<double>& values = binValues;
 	std::vector<double>& valuesNorm = binValuesNormalised;
 	std::vector<double>& centers = binCenters;
+	std::vector<double>& edges = binEdges;
 
 	// Find the first non-zero element
-	auto start = std::find_if(values.begin(), values.end(), [](double x) { return x != 0; });
+	auto start = std::find_if(values.begin(), values.end(),
+		[](double x) { return x != 0; });
 
 	// Find the last non-zero element
-	auto end = std::find_if(values.rbegin(), values.rend(), [](double x) { return x != 0; }).base();
+	auto end = std::find_if(values.rbegin(), values.rend(),
+		[](double x) { return x != 0; }).base();
 
 	// Check if we have any non-zero elements at all
 	if (start < end)
 	{
-		// Create new vectors with the range [start, end)
 		int startIndex = std::distance(values.begin(), start);
-		int endIndex = std::distance(values.begin(), end);
+		int endIndex = std::distance(values.begin(), end); // one past last bin
+
+		// Replace with trimmed vectors
 		values = std::vector<double>(start, end);
-
-		valuesNorm = std::vector<double>(valuesNorm.begin() + startIndex,
-			valuesNorm.begin() + endIndex);
-
-		centers = std::vector<double>(centers.begin() + startIndex,
-			centers.begin() + endIndex);
+		valuesNorm = std::vector<double>(valuesNorm.begin() + startIndex, valuesNorm.begin() + endIndex);
+		centers = std::vector<double>(centers.begin() + startIndex, centers.begin() + endIndex);
+		edges = std::vector<double>(edges.begin() + startIndex,	edges.begin() + endIndex + 1);
 	}
 	else
 	{
-		// Clear the vector if it's all zeros
+		// Clear everything if all zeros
 		values.clear();
 		valuesNorm.clear();
 		centers.clear();
+		edges.clear();
 	}
 }
 
@@ -605,7 +609,7 @@ void EnergyDistribution::CalculatePsisFromBinning(TH1D* crossSection)
 	}
 }
 
-void EnergyDistribution::Plot(bool showMarkers, bool showFit) const
+void EnergyDistribution::Plot(bool showMarkers, bool showFit, bool plotAsHist) const
 {
 	if (!showPlot)
 	{
@@ -616,7 +620,15 @@ void EnergyDistribution::Plot(bool showMarkers, bool showFit) const
 
 	if (showNormalisedByWidth)
 	{
-		ImPlot::PlotLine(label.c_str(), binCenters.data(), binValuesNormalised.data(), binValuesNormalised.size());
+		if (plotAsHist)
+		{
+			if (showMarkers) ImPlot::PlotScatter(label.c_str(), binCenters.data(), binValuesNormalised.data(), binValuesNormalised.size());
+			ImPlot::PlotStairs(label.c_str(), binEdges.data(), binValuesNormalised.data(), binEdges.size());
+		}	
+		else
+		{
+			ImPlot::PlotLine(label.c_str(), binCenters.data(), binValuesNormalised.data(), binValuesNormalised.size());
+		}
 
 		ImVec4 color = ImPlot::GetLastItemColor();
 
@@ -737,13 +749,24 @@ void EnergyDistribution::SaveHist(std::filesystem::path folder) const
 	}
 	outfile << GetHeaderString();
 
-	outfile << "# bin center [eV]\tbin value\tbin value normalised by bin width\n";
+	outfile << "# ";
+
+	if(binEdges.size() == binCenters.size() + 1)
+		outfile << "left bin edge [eV]\t";
+
+	outfile << "bin center [eV]\tbin value\tbin value normalised by bin width\n";
 	for (int i = 0; i < binCenters.size(); i++)
 	{
+		// older saved histograms did not store the bin edges
+		if (binEdges.size() == binCenters.size() + 1)
+			outfile << binEdges[i] << "\t";
+
 		outfile << binCenters[i] << "\t";
 		outfile << binValues[i] << "\t";
 		outfile << binValuesNormalised[i] << "\n";
 	}
+	if (binEdges.size() == binCenters.size() + 1)
+		outfile << binEdges.back();
 
 	outfile.close();
 }
@@ -774,10 +797,24 @@ void EnergyDistribution::Load(std::filesystem::path& file)
 	while (std::getline(histFile, line))
 	{
 		std::vector<std::string> tokens = FileUtils::SplitLine(line, "\t");
-
-		binCenters.push_back(std::stod(tokens[0]));
-		binValues.push_back(std::stod(tokens[1]));
-		binValuesNormalised.push_back(std::stod(tokens[2]));
+	
+		if (tokens.size() == 3)
+		{
+			binCenters.push_back(std::stod(tokens[0]));
+			binValues.push_back(std::stod(tokens[1]));
+			binValuesNormalised.push_back(std::stod(tokens[2]));
+		}
+		else if (tokens.size() == 4)
+		{
+			binEdges.push_back(std::stod(tokens[0]));
+			binCenters.push_back(std::stod(tokens[1]));
+			binValues.push_back(std::stod(tokens[2]));
+			binValuesNormalised.push_back(std::stod(tokens[3]));
+		}
+		else if (tokens.size() == 1)
+		{
+			binEdges.push_back(std::stod(tokens[0]));
+		}
 	}
 	histFile.close();
 	std::cout << "loaded file: " << file.filename();

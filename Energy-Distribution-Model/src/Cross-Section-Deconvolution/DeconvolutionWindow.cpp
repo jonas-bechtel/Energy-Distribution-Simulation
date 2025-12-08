@@ -27,6 +27,7 @@ namespace DeconvolutionWindow
 	static bool logX = true;
 	static bool logY = true;
 	static bool showMarkers = false;
+	static bool plotAsHist = false;
 	static bool showSubfunctions = false;
 	 
 	static bool showBoltzmannConvolutionWindow = false;
@@ -236,6 +237,8 @@ namespace DeconvolutionWindow
 		ImGui::SameLine();
 		ImGui::Checkbox("show markers", &showMarkers);
 		ImGui::SameLine();
+		ImGui::Checkbox("plot as hist", &plotAsHist);
+		ImGui::SameLine();
 		ImGui::Checkbox("show f_pl", &showBoltzmannConvolutionWindow);
 		ImGui::SameLine();
 		ImGui::Checkbox("show subfunctions", &showSubfunctions);
@@ -253,7 +256,7 @@ namespace DeconvolutionWindow
 			for (const CrossSection& cs : crossSectionList)
 			{
 				ImGui::PushID(i++);
-				cs.Plot(showMarkers);
+				cs.Plot(showMarkers, plotAsHist);
 				ImGui::PopID();
 			}
 
@@ -469,11 +472,19 @@ namespace DeconvolutionWindow
 			ImGui::SameLine();
 			if (ImGui::Button("show initial guess"))
 			{
-				CrossSection cs;
-				cs.SetupBinning(binSettings, rateCoefficientList.at(currentRateCoefficientIndex));
-				cs.SetInitialGuessValues(rateCoefficientList.at(currentRateCoefficientIndex));
-				cs.SetLabel("initial guess");
-				AddCrossSectionToList(cs);
+				if(!rateCoefficientList.empty())
+				{
+					CrossSection cs;
+					cs.SetupBinning(binSettings, rateCoefficientList.at(currentRateCoefficientIndex));
+					cs.SetInitialGuessValues(rateCoefficientList.at(currentRateCoefficientIndex));
+					cs.SetLabel("initial guess");
+					AddCrossSectionToList(cs);
+				}
+				else
+				{
+					ImGui::OpenPopup("missing data");
+					std::cout << "no rate coefficient selected\n";
+				}
 			}
 			if (ImGui::Button("create 1/E cs"))
 			{
@@ -485,6 +496,7 @@ namespace DeconvolutionWindow
 			ImGui::SetNextItemWidth(100.0f);
 			ImGui::InputDouble("scale", &scale, 0, 0, "%.2e");
 
+			ShowMissingDataPopup();
 		}
 		ImGui::EndChild();
 	}

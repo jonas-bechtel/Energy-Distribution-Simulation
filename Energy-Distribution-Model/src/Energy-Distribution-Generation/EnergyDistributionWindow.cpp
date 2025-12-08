@@ -47,6 +47,7 @@ namespace EnergyDistributionWindow
 	static bool logX = true;
 	static bool logY = true;
 	static bool showMarkers = false;
+	static bool plotAsHist = false;
 	static bool showFits = true;
 	static bool showAnalytical = false;
 
@@ -58,7 +59,7 @@ namespace EnergyDistributionWindow
 	{
 		AnalyticalDistribution::Update();
 
-		currentDescriptionFile = std::filesystem::path("input/3D Models/C60/dataset1/100x100x100_Ie0.95_Ucath44.2_RelTol0_mbrc1_energies.asc");
+		currentDescriptionFile = std::filesystem::path("input/3D-Models/C60/Ie_0.2547 (103 steps)/100x100x100_Ie0.2547_Ucath44.2_RelTol0_Ni0_mbrc_mrg_v2_energies.asc");
 		//EnergyDistributionSet set;
 		//set.Load(FileUtils::GetEnergyDistSetFolder() / "C60/Ie_0.2547 (103 steps)" / "Tperp_1.5_Eext_0.266_test", true);
 		//setList.emplace_back(std::move(set));
@@ -339,6 +340,8 @@ namespace EnergyDistributionWindow
 		ImGui::SameLine();
 		ImGui::Checkbox("show markers", &showMarkers);
 		ImGui::SameLine();
+		ImGui::Checkbox("plot as Hist", &plotAsHist);
+		ImGui::SameLine();
 		ImGui::Checkbox("show fit", &showFits);
 		ImGui::SameLine();
 		ImGui::Checkbox("show analytical", &showAnalytical);
@@ -357,7 +360,7 @@ namespace EnergyDistributionWindow
 				for (const EnergyDistribution& eDist : set.GetDistributions())
 				{
 					ImGui::PushID(i++);
-					eDist.Plot(showMarkers, showFits);
+					eDist.Plot(showMarkers, showFits, plotAsHist);
 					ImGui::PopID();
 				}
 			}

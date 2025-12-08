@@ -55,7 +55,7 @@ public:
 
 	void Generate(std::filesystem::path descriptionFile, int index, const BinningSettings& binSettings, const PeakFitSettings& fitSettings);
 	void CalculatePsisFromBinning(TH1D* crossSection);
-	void Plot(bool showMarkers, bool showFit) const;
+	void Plot(bool showMarkers, bool showFit, bool plotAsHist) const;
 
 	void SetPlot(bool plot);
 	void SetNormalised(bool normalised);
@@ -93,6 +93,7 @@ private:
 	std::vector<double> binCenters;
 	std::vector<double> binValues;
 	std::vector<double> binValuesNormalised;
+	std::vector<double> binEdges;
 	std::vector<double> fitX;
 	std::vector<double> fitY;
 

@@ -42,8 +42,7 @@ void CrossSection::SetupBinning(const CrossSectionBinningSettings& binSettings, 
 
 	Clear();
 
-	std::vector<double> binEdges;
-
+	binEdges.clear();
 	binEdges.reserve(10);
 	binEdges.push_back(minEnergy);
 	binEdges.push_back(secondEdge);
@@ -331,7 +330,6 @@ void CrossSection::FillWithOneOverE(double scale)
 	Clear();
 
 	// setup binning
-	std::vector<double> binEdges;
 	double minEnergy = 1e-4;
 	double maxEnergy = 100;
 	int numberBins = 1000;
@@ -477,11 +475,21 @@ void CrossSection::Deconvolve(RateCoefficient& rc, EnergyDistributionSet& set, c
 	std::cout << "Chi2 reduced: " << chi2_reduced << std::endl;
 }
 
-void CrossSection::Plot(bool showMarkers) const
+void CrossSection::Plot(bool showMarkers, bool plotAsHist) const
 {
 	if (showMarkers) ImPlot::SetNextMarkerStyle(ImPlotMarker_Square);
-	ImPlot::PlotLine(label.c_str(), energies.data(), values.data(), values.size());
+
+	if (plotAsHist)
+	{
+		if (showMarkers) ImPlot::PlotScatter(label.c_str(), energies.data(), values.data(), values.size());
+		ImPlot::PlotStairs(label.c_str(), binEdges.data(), values.data(), binEdges.size());
+	}
+	else
+	{
+		ImPlot::PlotLine(label.c_str(), energies.data(), values.data(), values.size());
+	}
 	ImPlot::PlotErrorBars(label.c_str(), energies.data(), values.data(), errors.data(), errors.size());
+	
 }
 
 void CrossSection::Clear()
@@ -508,19 +516,44 @@ void CrossSection::Load(std::filesystem::path& file)
 	Clear();
 
 	std::string line;
+
+
 	// skip first line
-	std::getline(infile, line);
+	//std::getline(infile, line);
+	std::string header = FileUtils::GetHeaderFromFile(infile);
+
 	while (std::getline(infile, line))
 	{
 		std::vector<std::string> tokens = FileUtils::SplitLine(line, "\t");
-		energies.push_back(std::stod(tokens[0]));
-		values.push_back(std::stod(tokens[1]));
-		errors.push_back(std::stod(tokens[2]));
+		if (tokens.size() == 3)
+		{
+			energies.push_back(std::stod(tokens[0]));
+			values.push_back(std::stod(tokens[1]));
+			errors.push_back(std::stod(tokens[2]));
 
-		valueArray.push_back(std::stod(tokens[1]));
+			valueArray.push_back(std::stod(tokens[1]));
+		}
+		else if (tokens.size() == 4)
+		{
+			binEdges.push_back(std::stod(tokens[0]));
+
+			energies.push_back(std::stod(tokens[1]));
+			values.push_back(std::stod(tokens[2]));
+			errors.push_back(std::stod(tokens[3]));
+
+			valueArray.push_back(std::stod(tokens[2]));
+		}
+		else if (tokens.size() == 1)
+		{
+			binEdges.push_back(std::stod(tokens[0]));
+		}
 	}
 
-	std::vector<double> binEdges = FileUtils::CalculateBinEdges(energies, false);
+	if (binEdges.empty())
+	{
+		binEdges = FileUtils::CalculateBinEdges(energies, false);
+	}
+	//std::vector<double> binEdges = FileUtils::CalculateBinEdges(energies, false);
 
 	hist = new TH1D("cross section fit", "cross section fit", binEdges.size() - 1, binEdges.data());
 
@@ -551,13 +584,14 @@ void CrossSection::Save() const
 	}
 	outfile << std::scientific << std::setprecision(6);
 
-	outfile << "# Energy [eV]\tCross Section Value\terror\n";
+	outfile << "# Left Bin Edge [eV]\Bin Center [eV]\tCross Section Value\terror\n";
 
 	for (int i = 0; i < energies.size(); i++)
 	{
-		outfile << energies[i] << "\t" << values[i] << "\t" << errors[i] << "\n";
+		outfile << binEdges[i] << "\t" << energies[i] << "\t" << values[i] << "\t" << errors[i] << "\n";
 	}
-
+	outfile << binEdges.back();
+	
 	outfile.close();
 }
 

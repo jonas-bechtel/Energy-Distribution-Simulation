@@ -58,7 +58,7 @@ public:
 	void SetInitialGuessValues(const RateCoefficient& rc);
 	void Deconvolve(RateCoefficient& rc, EnergyDistributionSet& set, const FittingOptions& fitSettings, const CrossSectionBinningSettings& binSettings);
 
-	void Plot(bool showMarkers) const;
+	void Plot(bool showMarkers, bool plotAsHist) const;
 
 	void Clear();
 	void Save() const;
@@ -80,6 +80,7 @@ private:
 	std::vector<double> energies;
 	std::vector<double> values;
 	std::vector<double> errors;
+	std::vector<double> binEdges;
 
 	// array with values from error iterations
 	std::vector<double> valueArray;
