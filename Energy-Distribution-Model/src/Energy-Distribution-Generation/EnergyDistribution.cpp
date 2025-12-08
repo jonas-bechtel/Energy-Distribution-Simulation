@@ -897,8 +897,8 @@ std::string EnergyDistribution::GetHeaderString() const
 std::string EnergyDistribution::Filename() const
 {
 	std::ostringstream indexSS;
-	std::ostringstream eCoolSS;
-	eCoolSS << std::fixed << std::setprecision(3) << eBeamParameter.coolingEnergy.get();
+	//std::ostringstream eCoolSS;
+	//eCoolSS << std::fixed << std::setprecision(3) << eBeamParameter.coolingEnergy.get();
 	indexSS << std::setw(4) << std::setfill('0') << index;
 
 	std::string string = indexSS.str() + std::string(Form(" E_d %.4feV", eBeamParameter.detuningEnergy.get()));

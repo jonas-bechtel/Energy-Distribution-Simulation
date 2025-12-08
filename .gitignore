@@ -19,8 +19,6 @@ vendor/root*
 
 *.toml
 *.txt
-*.png
-*.PNG
 
 # Binaries
 **/bin/

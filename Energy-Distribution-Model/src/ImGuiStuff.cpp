@@ -104,6 +104,22 @@ void InitImGui()
     ::ShowWindow(hwnd, SW_SHOWDEFAULT);
     ::UpdateWindow(hwnd);
 
+    // ===== Change the taskbar + titlebar icon =====
+    HICON hIconBig = (HICON)LoadImage(NULL, L"images/icon.ico",
+        IMAGE_ICON,
+        0, 0,
+        LR_LOADFROMFILE | LR_DEFAULTSIZE);
+
+    HICON hIconSmall = (HICON)LoadImage(NULL, L"images/icon.ico",
+        IMAGE_ICON,
+        0, 0,
+        LR_LOADFROMFILE | LR_DEFAULTSIZE);
+
+    // Set big icon (used on Alt+Tab and taskbar)
+    SendMessage(hwnd, WM_SETICON, ICON_BIG, (LPARAM)hIconBig);
+    // Set small icon (used on titlebar and sometimes taskbar thumbnails)
+    SendMessage(hwnd, WM_SETICON, ICON_SMALL, (LPARAM)hIconSmall);
+
 #else
     // Setup SDL
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_GAMECONTROLLER) != 0)
@@ -160,6 +176,12 @@ void InitImGui()
     {
         printf("Error: SDL_CreateWindow(): %s\n", SDL_GetError());
         return;
+    }
+
+    SDL_Surface* icon = IMG_Load("images/icon.png");
+    if (icon) {
+        SDL_SetWindowIcon(window, icon);
+        SDL_FreeSurface(icon);
     }
 
     gl_context = SDL_GL_CreateContext(window);

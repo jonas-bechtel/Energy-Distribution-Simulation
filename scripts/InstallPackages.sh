@@ -6,6 +6,7 @@ PACKAGES=(
     "build-essential"
     "libsdl2-dev"
     "libgsl-dev"
+    "libsdl2-image-dev"
     "libgif-dev"
     "libxft2"
     "libtbb-dev"
