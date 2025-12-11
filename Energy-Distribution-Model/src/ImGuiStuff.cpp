@@ -66,6 +66,7 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 #include "imgui_impl_opengl3.h"
 #include <stdio.h>
 #include <SDL.h>
+#include <SDL2/SDL_image.h>
 #if defined(IMGUI_IMPL_OPENGL_ES2)
 #include <SDL_opengles2.h>
 #else
@@ -126,6 +127,10 @@ void InitImGui()
     {
         printf("Error: %s\n", SDL_GetError());
         return;
+    }
+    if (!(IMG_Init(IMG_INIT_PNG) & IMG_INIT_PNG)) 
+    {
+        SDL_Log("SDL_image init error: %s", IMG_GetError());
     }
 
     // Decide GL+GLSL versions
@@ -274,6 +279,7 @@ void ShutdownImGui()
     SDL_GL_DeleteContext(gl_context);
     SDL_DestroyWindow(window);
     SDL_Quit();
+	IMG_Quit();
 #endif
 }
 
