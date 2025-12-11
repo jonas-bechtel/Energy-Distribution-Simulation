@@ -587,7 +587,7 @@ void EnergyDistribution::CalculatePsisFromBinning(TH1D* crossSection)
 		int bin = crossSection->FindBin(energy);
 		if (bin == 0)
 		{
-			std::cout << "crossection hist too small, got underflow when putting in " << energy << std::endl;
+			//std::cout << "crossection hist too small, got underflow when putting in " << energy << std::endl;
 			continue;
 		}
 		//if (bin < 10) std::cout << "bin " << bin << ": " << energy << std::endl;
