@@ -419,7 +419,7 @@ namespace FileUtils
         return binEdges;
     }
 
-    bool IsBinaryFile(const std::filesystem::path& filename)
+    bool IsTextFile(const std::filesystem::path& filename)
     {
         constexpr std::size_t N = 10;               // how many bytes to examine
 

@@ -32,7 +32,7 @@ namespace FileUtils
 	std::array<float, 3> GetParametersFromDescriptionFileAtIndex(const std::filesystem::path& descriptionFile, int index);
 	std::vector<double> CalculateBinEdges(const std::vector<double>& binCenters, bool uniformDistances = true, double firstEdge = 0);
 
-	bool IsBinaryFile(const std::filesystem::path& filename);
+	bool IsTextFile(const std::filesystem::path& filename);
 }
 
 
