@@ -833,7 +833,7 @@ void EnergyDistribution::LoadSamples(std::filesystem::path& file)
 		std::cout << "\tno samples file found";
 		return;
 	}
-	bool isBinary = FileUtils::IsBinaryFile(samplesFilename);
+	bool isTextFile = FileUtils::IsTextFile(samplesFilename);
 
 	std::ifstream samplesFile(samplesFilename, std::ios::binary);
 
@@ -844,15 +844,7 @@ void EnergyDistribution::LoadSamples(std::filesystem::path& file)
 		return;
 	}
 
-	// check for binary or text file
-	//char firstChar;
-	//samplesFile.get(firstChar);
-
-	//samplesFile.clear();
-	//samplesFile.seekg(0, std::ios::beg);
-
-	//if (firstChar == '#') 
-	if(isBinary)
+	if(isTextFile)
 	{
 		// get header to get rid of it
 		FileUtils::GetHeaderFromFile(samplesFile);
@@ -877,6 +869,7 @@ void EnergyDistribution::LoadSamples(std::filesystem::path& file)
 			std::cout << "Read different number of bytes than expected. Read: "
 				<< bytesRead << ", Expected: " << numberSamples * sizeof(double) << "\n";
 		}
+		std::cout << "size of double: " << sizeof(double) << std::endl;
 	}
 	
 	std::cout << "\tsamples file found";
