@@ -71,8 +71,8 @@ public:
 
 	void SaveSamples(std::filesystem::path folder) const;
 	void SaveHist(std::filesystem::path folder) const;
-	void Load(std::filesystem::path& file);
-	void LoadSamples(std::filesystem::path& file);	
+	void Load(const std::filesystem::path& file);
+	void LoadSamples(const std::filesystem::path& file);	
 	
 private:
 	void CopyParameters();

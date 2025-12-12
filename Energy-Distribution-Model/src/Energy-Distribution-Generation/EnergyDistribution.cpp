@@ -771,7 +771,7 @@ void EnergyDistribution::SaveHist(std::filesystem::path folder) const
 	outfile.close();
 }
 
-void EnergyDistribution::Load(std::filesystem::path& file)
+void EnergyDistribution::Load(const std::filesystem::path& file)
 {
 	// load the .asc file with the histogram data
 	std::ifstream histFile(file);
@@ -824,10 +824,12 @@ void EnergyDistribution::Load(std::filesystem::path& file)
 	std::cout << std::endl;
 }
 
-void EnergyDistribution::LoadSamples(std::filesystem::path& file)
+void EnergyDistribution::LoadSamples(const std::filesystem::path& file)
 {
 	// see if .samples file exist with collision energy data
-	std::filesystem::path samplesFilename = file.replace_extension(".samples");
+	std::filesystem::path samplesFilename = file;
+	samplesFilename.replace_extension(".samples");
+
 	if (!std::filesystem::exists(samplesFilename))
 	{
 		std::cout << "\tno samples file found";

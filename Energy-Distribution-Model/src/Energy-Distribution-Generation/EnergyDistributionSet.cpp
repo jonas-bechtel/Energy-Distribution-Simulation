@@ -322,18 +322,40 @@ void EnergyDistributionSet::Load(std::filesystem::path& infolder)
 		return;
 	}
 
-	// Iterate through the directory
-	for (const auto& entry : std::filesystem::directory_iterator(infolder))
+	std::vector<std::filesystem::path> files;
+
+	for (const auto& entry : std::filesystem::directory_iterator(infolder)) 
 	{
 		if (entry.is_regular_file() && entry.path().extension() == ".asc")
 		{
-			std::filesystem::path file = entry.path();
-			EnergyDistribution newDist;
-			newDist.Load(file);
-
-			AddDistribution(std::move(newDist));
+			files.push_back(entry.path());
 		}
 	}
+
+	// Sort the paths (default < orders by lexicographical filename)
+	std::sort(files.begin(), files.end());
+
+	for (const auto& file : files) 
+	{
+		EnergyDistribution newDist;
+		newDist.Load(file);
+		AddDistribution(std::move(newDist));
+	}
+
+
+
+	//// Iterate through the directory
+	//for (const auto& entry : std::filesystem::directory_iterator(infolder))
+	//{
+	//	if (entry.is_regular_file() && entry.path().extension() == ".asc")
+	//	{
+	//		std::filesystem::path file = entry.path();
+	//		EnergyDistribution newDist;
+	//		newDist.Load(file);
+	//
+	//		AddDistribution(std::move(newDist));
+	//	}
+	//}
 	folder = infolder.parent_path().parent_path().filename() / infolder.parent_path().filename();
 	subFolder = infolder.filename();
 }
