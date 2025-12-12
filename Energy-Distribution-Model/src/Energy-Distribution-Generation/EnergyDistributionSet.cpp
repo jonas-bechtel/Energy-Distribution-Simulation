@@ -267,8 +267,8 @@ void EnergyDistributionSet::ShowList()
 		{
 			SetAllShowNormalised(false);
 		}
-		ImGui::EndPopup();
 	}
+	ImGui::EndPopup();
 	
 	ImGui::Text("energy distrubtion set: %s", GetLabel().c_str());
 
