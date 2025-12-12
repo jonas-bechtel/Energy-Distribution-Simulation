@@ -249,7 +249,7 @@ void EnergyDistributionSet::ShowList()
 		ImGui::EndListBox();
 	}
 	
-	if (ImGui::BeginPopupContextItem())
+	if (ImGui::BeginPopupContextItem("plot helper"))
 	{
 		if (ImGui::Button("plot all"))
 		{
@@ -267,8 +267,9 @@ void EnergyDistributionSet::ShowList()
 		{
 			SetAllShowNormalised(false);
 		}
+		ImGui::EndPopup();
 	}
-	ImGui::EndPopup();
+	
 	
 	ImGui::Text("energy distrubtion set: %s", GetLabel().c_str());
 
