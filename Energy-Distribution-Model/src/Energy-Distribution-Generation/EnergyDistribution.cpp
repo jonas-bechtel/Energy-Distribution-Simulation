@@ -874,7 +874,8 @@ void EnergyDistribution::LoadSamples(std::filesystem::path& file)
 		auto bytesRead = samplesFile.gcount();
 		if (bytesRead != numberSamples * sizeof(double))
 		{
-			std::cout << "Read fewer bytes than expected: " << bytesRead << "\n";
+			std::cout << "Read different number of bytes than expected. Read: "
+				<< bytesRead << ", Expected: " << numberSamples * sizeof(double) << "\n";
 		}
 	}
 	
