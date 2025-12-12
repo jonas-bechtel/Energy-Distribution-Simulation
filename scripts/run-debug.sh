@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-echo "Running program in Release"
+echo "Running program in Debug"
 
 script_path=$(readlink -f -- "$0")
 script_dir=$(dirname -- "$script_path")
