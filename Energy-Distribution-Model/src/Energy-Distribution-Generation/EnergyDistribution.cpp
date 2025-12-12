@@ -869,6 +869,7 @@ void EnergyDistribution::LoadSamples(std::filesystem::path& file)
 			std::cout << "Read different number of bytes than expected. Read: "
 				<< bytesRead << ", Expected: " << numberSamples * sizeof(double) << "\n";
 		}
+		std::cout << " number samples: " << numberSamples << std::endl;;
 		std::cout << "size of double: " << sizeof(double) << std::endl;
 	}
 	
