@@ -790,7 +790,7 @@ void EnergyDistribution::Load(std::filesystem::path& file)
 	labEnergiesParameter.fromString(header);
 	mcmcParameter.fromString(header);
 	outputParameter.fromString(header);
-
+	std::cout << mcmcParameter.toString() << std::endl;
 	SetupLabellingThings();
 
 	std::string line;
