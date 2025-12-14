@@ -10,13 +10,16 @@ PythonRequirements.Validate()
 from SetupPremake import PremakeConfiguration as PremakeRequirements
 from SetupROOT import RootConfiguration as RootRequirements
 
-os.chdir('./../') # Change from devtools/scripts directory to root
+os.chdir('./../') # Change from scripts directory to root
 
 premakeInstalled = PremakeRequirements.Validate()
 rootInstalled = RootRequirements.Validate()
 
 print("\nUpdating submodules...")
 subprocess.call(["git", "submodule", "update", "--init", "--recursive"])
+
+# stop imgui.ini file from beeing tracked
+subprocess.call(["git", "update-index", "--skpi-worktree", "*/imgui.ini"])
 
 if (premakeInstalled):
     if platform.system() == "Windows":
