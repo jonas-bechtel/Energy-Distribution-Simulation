@@ -389,6 +389,8 @@ bool ElectronBeamParameter::ShowControls()
 
     ImGui::PopItemWidth();
     ImGui::EndGroup();
+
+    return false;
 }
 
 std::string LabEnergyParameter::ToString() const
