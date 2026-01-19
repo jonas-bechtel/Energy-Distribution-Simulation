@@ -31,7 +31,7 @@ namespace CoolingForce
 
 	void Init()
 	{
-		currentDescriptionFile = std::filesystem::path("input/3D-Models/C60/C60 0.012 peak/100x100x100_Ie0.012_Ucath44.2_RelTol0_Ni0_mbrc2_energies.asc");
+		currentDescriptionFile = std::filesystem::path("input/3D-Models/C60/Ie_0.2547 (103 steps)/100x100x100_Ie0.2547_Ucath44.2_RelTol0_Ni0_mbrc_mrg_v2_energies.asc");
 		maxIndex = FileUtils::GetMaxIndex(currentDescriptionFile);
 	}
 
@@ -112,6 +112,7 @@ namespace CoolingForce
 					LabEnergy::SetParameters(cfValue.GetLabEnergyParameters());
 					ElectronBeam::SetParameters(cfValue.GetElectronBeamParameters());
 					IonBeam::SetParameters(cfValue.GetIonBeamParameters());
+					General::SetParameters(cfValue.GetGeneralParameters());
 				}
 				ImGui::EndDragDropTarget();
 			}
@@ -359,7 +360,9 @@ namespace CoolingForce
 			}
 
 			ImGui::SameLine();
-			if (ImGui::BeginChild("ibeam", ImVec2(100, -1), flags))
+
+			ImGui::BeginGroup();
+			if (ImGui::BeginChild("ibeam", ImVec2(100, 100), flags | ImGuiChildFlags_ResizeY))
 			{
 				ImGui::SeparatorText("Ion Beam parameter");
 				IonBeam::ShowParameterControls();
@@ -376,6 +379,24 @@ namespace CoolingForce
 				}
 				ImGui::EndDragDropTarget();
 			}
+
+			if (ImGui::BeginChild("general", ImVec2(100, -1), flags))
+			{
+				ImGui::SeparatorText("general parameter");
+				General::ShowParameterControls();
+			}
+			ImGui::EndChild();
+			if (ImGui::BeginDragDropTarget())
+			{
+				if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("Cooling Force Value"))
+				{
+					Value& cfValue = *(Value*)payload->Data;
+					General::SetParameters(cfValue.GetGeneralParameters());
+				}
+				ImGui::EndDragDropTarget();
+			}
+
+			ImGui::EndGroup();
 		}
 		ImGui::End();
 	}

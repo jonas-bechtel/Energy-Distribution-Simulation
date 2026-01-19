@@ -42,9 +42,10 @@ namespace CoolingForce
 		void PlotForceSlice() const;
 		void UpdateSlice(float zValue);
 
-		ElectronBeamParameters GetElectronBeamParameters() const;
-		IonBeamParameters GetIonBeamParameters() const;
-		LabEnergyParameters GetLabEnergyParameters() const;
+		ElectronBeamParameter GetElectronBeamParameters() const;
+		IonBeamParameter GetIonBeamParameters() const;
+		LabEnergyParameter GetLabEnergyParameters() const;
+		GeneralParameter GetGeneralParameters() const;
 
 		void Save(std::filesystem::path folder) const;
 		void Load(std::filesystem::path file);
@@ -69,9 +70,10 @@ namespace CoolingForce
 		//double forceTransValue = 0.0;
 
 		// all the parameters used to create it
-		ElectronBeamParameters eBeamParameter;
-		IonBeamParameters ionBeamParameter;
-		LabEnergyParameters labEnergiesParameter;
+		ElectronBeamParameter eBeamParameter;
+		IonBeamParameter ionBeamParameter;
+		LabEnergyParameter labEnergiesParameter;
+		GeneralParameter generalParameter;
 
 		// additional labelling things
 		std::string label = "";

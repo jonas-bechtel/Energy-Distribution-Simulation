@@ -8,7 +8,7 @@
 
 namespace LabEnergy
 {
-	LabEnergyParameters parameters;
+	LabEnergyParameter parameters;
 
 	// 3D Hist with main data
 	static TH3D* hist;
@@ -17,9 +17,9 @@ namespace LabEnergy
 	static TH1D* noSpaceChargeHist = nullptr;
 
 	// optional parameters
-	static bool uniformLabEnergies = false;
-	static bool noSpaceCharge = false;
-	static bool interpolateEnergy = true;
+	//static bool uniformLabEnergies = false;
+	//static bool noSpaceCharge = false;
+	//static bool interpolateEnergy = true;
 
 	// plotting things
 	static std::vector<HistData3D> plotEnergies;
@@ -42,9 +42,9 @@ namespace LabEnergy
 	{
 		z = TMath::Abs(z);
 
-		if(noSpaceCharge)
+		if(parameters.noSpaceCharge)
 		{
-			if (interpolateEnergy)
+			if (parameters.interpolateEnergy)
 				return noSpaceChargeHist->Interpolate(
 					std::clamp(z, noSpaceChargeHist->GetXaxis()->GetXmin(),
 								  noSpaceChargeHist->GetXaxis()->GetXmax()));
@@ -73,15 +73,15 @@ namespace LabEnergy
 			//return HistUtils::GetValueAtPosition(hist, { 0, 0, z }, interpolateEnergy);
 		}
 
-		return HistUtils::GetValueAtPosition(hist, {x, y, z}, interpolateEnergy);
+		return HistUtils::GetValueAtPosition(hist, {x, y, z}, parameters.interpolateEnergy);
 	}
 
-	LabEnergyParameters GetParameters()
+	LabEnergyParameter GetParameters()
 	{
 		return parameters;
 	}
 
-	void SetParameters(const LabEnergyParameters& params)
+	void SetParameters(const LabEnergyParameter& params)
 	{
 		parameters = params;
 	}
@@ -117,9 +117,9 @@ namespace LabEnergy
 	std::string GetTags()
 	{
 		std::string tags = "";
-		if (uniformLabEnergies) tags += "uniform energy, ";
-		if (!interpolateEnergy) tags += "no energy interpolation, ";
-		if (noSpaceCharge) tags += "no space charge, ";
+		if (parameters.uniformLabEnergies) tags += "uniform energy, ";
+		if (!parameters.interpolateEnergy) tags += "no energy interpolation, ";
+		if (parameters.noSpaceCharge) tags += "no space charge, ";
 
 		return tags;
 	}
@@ -127,7 +127,7 @@ namespace LabEnergy
 	void SetupDistribution(std::filesystem::path energyfile)
 	{
 		delete hist;
-		if (uniformLabEnergies && parameters.centerLabEnergy)
+		if (parameters.uniformLabEnergies && parameters.centerLabEnergy)
 		{
 			hist = GenerateUniformLabEnergies();
 		}
@@ -136,7 +136,7 @@ namespace LabEnergy
 			hist = LoadLabEnergyFile(energyfile);
 		}
 
-		if (noSpaceCharge)
+		if (parameters.noSpaceCharge)
 		{
 			SetupNoSpaceChargeHist();
 		}
@@ -166,7 +166,7 @@ namespace LabEnergy
 			result->SetTitle("lab energies");
 			result->SetName("lab energies");
 
-			parameters.energyFile.set(file);
+			parameters.energyFile = file.filename().string();
 
 			return result;
 		}
@@ -301,17 +301,7 @@ namespace LabEnergy
 
 	void ShowParameterControls()
 	{
-		ImGui::BeginGroup();
-
-		ImGui::Checkbox("interpolate", &interpolateEnergy);
-		ImGuiUtils::TextTooltip("interpolate the value of the lab energy inside the 3D histogram");
-		
-		ImGui::Checkbox("no space charge", &noSpaceCharge);
-		ImGuiUtils::TextTooltip("removes space charge effects by using the minimum value in the xy-slice at distance z");
-
-		ImGui::Checkbox("uniform energies", &uniformLabEnergies);
-		ImGuiUtils::TextTooltip("fill lab energy histogram with the center lab energy");
-		ImGui::EndGroup();
+		parameters.ShowControls();
 	}
 
 	void ShowPlots()

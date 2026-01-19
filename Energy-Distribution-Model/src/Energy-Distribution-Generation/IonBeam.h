@@ -2,12 +2,12 @@
 
 #include "Point3D.h"
 #include "HeatMapData.h"
-#include "ParameterImplementations.h"
+#include "Parameter.h"
 
 namespace IonBeam
 {
-	IonBeamParameters GetParameters();
-	void SetParameters(const IonBeamParameters& params);
+	IonBeamParameter GetParameters();
+	void SetParameters(const IonBeamParameter& params);
 
 	void Init();
 
@@ -20,8 +20,6 @@ namespace IonBeam
 	double GetVelocityMagnitude();
 	float GetSigmaX();
 	float GetSigmaY();
-	float* GetLimitedRange();
-	bool IsRangeLimited();
 	TH3D* Get();
 	std::string GetTags();
 

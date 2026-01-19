@@ -67,7 +67,7 @@ void RateCoefficient::Convolve(const CrossSection& cs, EnergyDistributionSet& se
 
 	for (const EnergyDistribution& eDist : set.distributions)
 	{
-		detuningEnergies.push_back(eDist.eBeamParameter.detuningEnergy.get());
+		detuningEnergies.push_back(eDist.eBeamParameter.detuningEnergy);
 	}
 
 	value.clear();

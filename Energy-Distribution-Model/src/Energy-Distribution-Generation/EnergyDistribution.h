@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ParameterImplementations.h"
+#include "Parameter.h"
 #include "CoolingForceValue.h"
 
 using RNG_engine = std::mersenne_twister_engine<std::uint_fast64_t,
@@ -61,11 +61,12 @@ public:
 	void SetNormalised(bool normalised);
 
 	double GetDetuningEnergy() const;
-	OutputParameters GetOutputParameters() const;
-	ElectronBeamParameters GetElectronBeamParameters() const;
-	IonBeamParameters GetIonBeamParameters() const;
-	LabEnergyParameters GetLabEnergyParameters() const;
-	MCMC_Parameters GetMCMCParameters() const;
+	OutputParameter GetOutputParameters() const;
+	ElectronBeamParameter GetElectronBeamParameters() const;
+	IonBeamParameter GetIonBeamParameters() const;
+	LabEnergyParameter GetLabEnergyParameters() const;
+	MCMC_Parameter GetMCMCParameters() const;
+	GeneralParameter GetGeneralParameters() const;
 
 	void ShowListItem();
 
@@ -98,13 +99,14 @@ private:
 	std::vector<double> fitY;
 
 	// all the parameters used to create it
-	MCMC_Parameters mcmcParameter;
-	ElectronBeamParameters eBeamParameter;
-	IonBeamParameters ionBeamParameter;
-	LabEnergyParameters labEnergiesParameter;
+	MCMC_Parameter mcmcParameter;
+	ElectronBeamParameter eBeamParameter;
+	IonBeamParameter ionBeamParameter;
+	LabEnergyParameter labEnergiesParameter;
+	GeneralParameter generalParameter;
 
 	// output stuff
-	OutputParameters outputParameter;
+	OutputParameter outputParameter;
 
 	// additional labelling things
 	std::string label = "";

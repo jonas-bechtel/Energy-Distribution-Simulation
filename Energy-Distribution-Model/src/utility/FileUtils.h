@@ -27,6 +27,8 @@ namespace FileUtils
 
 	std::string GetHeaderFromFile(std::ifstream& file);
 	std::vector<std::string> SplitLine(std::string& line, const std::string& delimiter);
+	void RemoveSubstrings(std::string& string, const std::vector<std::string>& substrings);
+	void TrimSpaces(std::string& string);
 	std::filesystem::path FindFileWithIndex(const std::filesystem::path& folder, int index);
 	int GetMaxIndex(std::filesystem::path energiesFile);
 	std::array<float, 3> GetParametersFromDescriptionFileAtIndex(const std::filesystem::path& descriptionFile, int index);

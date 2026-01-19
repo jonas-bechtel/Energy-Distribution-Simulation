@@ -3,7 +3,7 @@
 #include "HeatMapData.h"
 #include "ROOTCanvas.h"
 #include "HistData3D.h"
-#include "ParameterImplementations.h"
+#include "Parameter.h"
 
 namespace LabEnergy
 {
@@ -11,8 +11,8 @@ namespace LabEnergy
 
 	TH3D* Get();
 	double GetValue(double x, double y, double z);
-	LabEnergyParameters GetParameters();
-	void SetParameters(const LabEnergyParameters& params);
+	LabEnergyParameter GetParameters();
+	void SetParameters(const LabEnergyParameter& params);
 
 	double GetCenterLabEnergy();
 	double GetOutsideDriftTubeEnergy();

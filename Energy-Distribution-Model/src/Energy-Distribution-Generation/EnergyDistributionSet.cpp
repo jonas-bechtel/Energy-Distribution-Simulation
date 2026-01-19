@@ -5,18 +5,18 @@
 void SetInformation::AddDistributionValues(const EnergyDistribution& dist)
 {
 	indeces.push_back(dist.index);
-	centerLabEnergy.push_back(dist.labEnergiesParameter.centerLabEnergy.get());
-	detuningEnergy.push_back(dist.eBeamParameter.detuningEnergy.get());
+	centerLabEnergy.push_back(dist.labEnergiesParameter.centerLabEnergy);
+	detuningEnergy.push_back(dist.eBeamParameter.detuningEnergy);
 
-	fitDetuningEnergy.push_back(dist.outputParameter.fitDetuningEnergy.get());
-	fitLongitudinalTemperature.push_back(dist.outputParameter.fitLongitudinalTemperature.get());
-	fitTransverseTemperature.push_back(dist.outputParameter.fitTransverseTemperature.get());
-	fitFWHM.push_back(dist.outputParameter.fitFWHM.get());
-	fitScalingFactor.push_back(dist.outputParameter.fitScalingFactor.get());
-	FWHM.push_back(dist.outputParameter.FWHM.get());
-	mainPeakPositions.push_back(dist.outputParameter.mainPeakPosition.get());
-	distanceLeftFWHM.push_back(dist.outputParameter.distancesFWHM.get().x);
-	distanceRightFWHM.push_back(dist.outputParameter.distancesFWHM.get().y);
+	fitDetuningEnergy.push_back(dist.outputParameter.fitDetuningEnergy);
+	fitLongitudinalTemperature.push_back(dist.outputParameter.fitLongitudinalTemperature);
+	fitTransverseTemperature.push_back(dist.outputParameter.fitTransverseTemperature);
+	fitFWHM.push_back(dist.outputParameter.fitFWHM);
+	fitScalingFactor.push_back(dist.outputParameter.fitScalingFactor);
+	FWHM.push_back(dist.outputParameter.FWHM);
+	mainPeakPositions.push_back(dist.outputParameter.mainPeakPosition);
+	distanceLeftFWHM.push_back(dist.outputParameter.distancesFWHM[0]);
+	distanceRightFWHM.push_back(dist.outputParameter.distancesFWHM[1]);
 }
 
 void SetInformation::RemoveDistributionValues(int index)
@@ -343,20 +343,6 @@ void EnergyDistributionSet::Load(std::filesystem::path& infolder)
 		AddDistribution(std::move(newDist));
 	}
 
-
-
-	//// Iterate through the directory
-	//for (const auto& entry : std::filesystem::directory_iterator(infolder))
-	//{
-	//	if (entry.is_regular_file() && entry.path().extension() == ".asc")
-	//	{
-	//		std::filesystem::path file = entry.path();
-	//		EnergyDistribution newDist;
-	//		newDist.Load(file);
-	//
-	//		AddDistribution(std::move(newDist));
-	//	}
-	//}
 	folder = infolder.parent_path().parent_path().filename() / infolder.parent_path().filename();
 	subFolder = infolder.filename();
 }

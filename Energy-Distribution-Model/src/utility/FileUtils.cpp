@@ -370,6 +370,33 @@ namespace FileUtils
         return tokens;
     }
 
+    void RemoveSubstrings(std::string& str, const std::vector<std::string>& substrings)
+    {
+        for (const auto& sub : substrings)
+        {
+            if (sub.empty())
+                continue;
+
+            std::string::size_type pos = 0;
+            while ((pos = str.find(sub, pos)) != std::string::npos)
+            {
+                str.erase(pos, sub.length());
+            }
+        }
+    }
+
+    void TrimSpaces(std::string& s)
+    {
+        // Remove leading spaces
+        s.erase(s.begin(), std::find_if(s.begin(), s.end(),
+            [](unsigned char ch) { return !std::isspace(ch); }));
+
+        // Remove trailing spaces
+        s.erase(std::find_if(s.rbegin(), s.rend(),
+            [](unsigned char ch) { return !std::isspace(ch); }).base(),
+            s.end());
+    }
+
     std::vector<double> CalculateBinEdges(const std::vector<double>& binCenters, bool uniformDistances, double firstEdge)
     {
         std::vector<double> binEdges;

@@ -53,13 +53,13 @@ namespace EnergyDistributionWindow
 
 	static bool showAllParamsWindow = false;
 
-	static bool firstTime = true;
-
 	void Init()
 	{
 		AnalyticalDistribution::Update();
 
 		currentDescriptionFile = std::filesystem::path("input/3D-Models/C60/Ie_0.2547 (103 steps)/100x100x100_Ie0.2547_Ucath44.2_RelTol0_Ni0_mbrc_mrg_v2_energies.asc");
+		maxIndex = FileUtils::GetMaxIndex(currentDescriptionFile);
+		
 		//EnergyDistributionSet set;
 		//set.Load(FileUtils::GetEnergyDistSetFolder() / "C60/Ie_0.2547 (103 steps)" / "Tperp_1.5_Eext_0.266_test", true);
 		//setList.emplace_back(std::move(set));
@@ -180,6 +180,7 @@ namespace EnergyDistributionWindow
 					ElectronBeam::SetParameters(eDist.GetElectronBeamParameters());
 					LabEnergy::SetParameters(eDist.GetLabEnergyParameters());
 					MCMC::SetParameters(eDist.GetMCMCParameters());
+					General::SetParameters(eDist.GetGeneralParameters());
 				}
 				ImGui::EndDragDropTarget();
 			}
@@ -382,7 +383,8 @@ namespace EnergyDistributionWindow
 		if (ImGui::Begin("all parameters", &showAllParamsWindow, ImGuiWindowFlags_NoDocking))
 		{
 			ImGuiChildFlags flags = ImGuiChildFlags_ResizeX | ImGuiChildFlags_Border;
-			if (ImGui::BeginChild("mcmc", ImVec2(100, -1), flags))
+			ImGui::BeginGroup();
+			if (ImGui::BeginChild("mcmc", ImVec2(100, 100), flags | ImGuiChildFlags_ResizeY))
 			{
 				ImGui::SeparatorText("MCMC parameter");
 				MCMC::ShowParameterControls();
@@ -397,6 +399,23 @@ namespace EnergyDistributionWindow
 				}
 				ImGui::EndDragDropTarget();
 			}
+
+			if (ImGui::BeginChild("general", ImVec2(100, -1), flags))
+			{
+				ImGui::SeparatorText("general parameter");
+				General::ShowParameterControls();
+			}
+			ImGui::EndChild();
+			if (ImGui::BeginDragDropTarget())
+			{
+				if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("Energy distribution"))
+				{
+					EnergyDistribution& eDist = *(EnergyDistribution*)payload->Data;
+					General::SetParameters(eDist.GetGeneralParameters());
+				}
+				ImGui::EndDragDropTarget();
+			}
+			ImGui::EndGroup();
 
 			ImGui::SameLine();
 			if (ImGui::BeginChild("labe", ImVec2(100, -1), flags))

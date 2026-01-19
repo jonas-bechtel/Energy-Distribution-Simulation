@@ -10,6 +10,7 @@
 #include <future>
 #include <execution>
 #include <numeric>
+#include <string_view>
 
 #include <vector>
 #include <array>

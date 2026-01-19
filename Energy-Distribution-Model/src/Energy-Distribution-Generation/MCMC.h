@@ -4,7 +4,7 @@
 #include "HeatMapData.h"
 #include "ROOTCanvas.h"
 #include "HistData3D.h"
-#include "ParameterImplementations.h"
+#include "Parameter.h"
 
 using RNG_engine = std::mersenne_twister_engine<std::uint_fast64_t,
 	64, 312, 156, 31,
@@ -18,14 +18,13 @@ namespace MCMC
 {
 	void Init();
 
-	MCMC_Parameters GetParameters();
-	void SetParameters(const MCMC_Parameters& params);
+	MCMC_Parameter GetParameters();
+	void SetParameters(const MCMC_Parameter& params);
 	std::vector<Point3D>& GetSamples();
 
 	std::string GetTags();
 
 	void SetTargetDist(TH3D* targeDist);
-
 	void GenerateSamples();
 
 	float GenerateSubchain(int length, int offset, RNG_engine& generator);
@@ -39,7 +38,7 @@ namespace MCMC
 
 	void ShowWindow();
 	void ShowList();
-	void ShowParameterControls();
 	void ShowPlots();
 	void ShowAutoCorrelationPlots();
+	void ShowParameterControls();
 }

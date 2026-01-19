@@ -1,312 +1,146 @@
 #pragma once
-#include "pch.h"
 #define FMT_UNICODE 0
 #define FMT_HEADER_ONLY
 #include <fmt/format.h>
 
-using Path = std::filesystem::path;
+struct GeneralParameter;
 
-struct float2
+namespace General
 {
-	float x, y;
+	GeneralParameter GetParameters();
+	void SetParameters(const GeneralParameter& params);
+	void ShowParameterControls();
+}
 
-	float2(float x_, float y_) : x(x_), y(y_) {}
-	float2(std::string& str)
-	{
-		std::stringstream ss(str);
-		std::string number;
+struct Parameter
+{
+	virtual std::string ToString() const = 0;
+	virtual void FromString(std::string& str) = 0;
+	virtual bool ShowControls() = 0;
 
-		std::getline(ss, number, ',');
-		x = std::stof(number);
-		std::getline(ss, number, ',');
-		y = std::stof(number);
-	}
+	virtual ~Parameter() = default;
 };
 
-struct float3
+struct GeneralParameter : public Parameter
 {
-	float x, y, z;
+	// limit z range for energy dist generation and cooling force calculation
+	bool limitZRange = false;
+	float limitedZRange[2] = { -0.4f, 0.4f };
 
-	float3(float x_, float y_, float z_) : x(x_), y(y_), z(z_) {}
-	float3(std::string& str)
-	{
-		std::stringstream ss(str);
-		std::string number;
-
-		std::getline(ss, number, ',');
-		x = std::stof(number);
-		std::getline(ss, number, ',');
-		y = std::stof(number);
-		std::getline(ss, number, ',');
-		z = std::stof(number);
-	}
+	std::string ToString() const override;
+	void FromString(std::string& str) override;
+	bool ShowControls() override;
 };
 
-template<typename T>
-struct ParameterValue
+struct MCMC_Parameter : public Parameter
 {
-	enum Type { INT, DOUBLE, FLOAT_2, FLOAT_3, BOOL, PATH };
+	int numberSamples = (int)3e5;					
+	int burnIn = 1000;								
+	int lag = 30;									
+	float proposalSigma[3] = {0.005f, 0.005f, 0.2f};
+	int seed = (int)std::time(0);		
 
-	// needs to be the size of the largest possible stored element
-	using StorageType = std::aligned_storage_t<sizeof(Path), alignof(Path)>;
+	bool changeSeed = true;
+	bool automaticProposalStd = true;
+	bool useInterpolation = false;
+	bool generateAsync = true;
 
-	char type = INT;
-	bool optional;
-	StorageType value;
-	std::string name;
-	std::string format;
-
-	inline ParameterValue(T val, const std::string& name, const std::string& format, bool optional = false)
-		: name(name), format(format), optional(optional)
-	{
-		new (&value) T(val);
-
-		const std::type_info& typeInfo = typeid(T);
-		if (typeInfo == typeid(int))
-		{
-			type = INT;
-		}
-		else if (typeInfo == typeid(double))
-		{
-			type = DOUBLE;
-		}
-		else if (typeInfo == typeid(float2))
-		{
-			type = FLOAT_2;
-		}
-		else if (typeInfo == typeid(float3))
-		{
-			type = FLOAT_3;
-		}
-		else if (typeInfo == typeid(bool))
-		{
-			type = BOOL;
-		}
-		else if (typeInfo == typeid(Path))
-		{
-			type = PATH;
-		}
-	}
-
-	// copy constructor
-	inline ParameterValue(const ParameterValue& other)
-	{
-		type = other.type;
-		name = other.name;
-		format = other.format;
-
-		T val = other.get();
-		new (&value) T(val);
-	}
-	// move constructor
-	inline ParameterValue(const ParameterValue&& other) = delete;
-	// move assignment operator
-	ParameterValue& operator=(const ParameterValue&& other) = delete;
-	// copy assignment operator
-	ParameterValue& operator=(const ParameterValue& other) 
-	{
-		if (this != &other) 
-		{
-			type = other.type;
-			name = other.name;
-			format = other.format;
-
-			T val = other.get();
-			new (&value) T(val);
-
-			//std::cout << "ParameterValue Copy assignment operator called" << std::endl;
-		}
-		return *this;
-	}
-	ParameterValue& operator=(const T& val)
-	{
-		set(val);
-		return *this;
-	}
-
-	T& get()
-	{
-		return *reinterpret_cast<T*>(&value);
-	}
-	const T& get() const
-	{
-		return *reinterpret_cast<const T*>(&value);
-	}
-	T* data()
-	{
-		return (T*)&value;
-	}
-	void set(T val)
-	{
-		reinterpret_cast<T*>(&value)->~T();
-
-		// Construct the new value in the same storage
-		new (&value) T(val);
-	}
-
-	operator T() 
-	{
-		return *(T*)(&value);
-	}
-	operator T() const
-	{
-		return *(T*)(&value);
-	}
-	operator T* () 
-	{
-		return (T*)&value;
-	}
-	operator float* ()
-	{
-		return (float*)&value;
-	}
+	std::string ToString() const override ;
+	void FromString(std::string& str) override;
+	bool ShowControls() override;
 };
 
-struct Parameters
+struct ElectronBeamParameter : public Parameter
 {
-public:
-	std::string toString(bool excludeOptionals = true) const
-	{
-		std::string result = "# " + m_name + "\n";
-		char* pointer = (char*)this;
+	double detuningEnergy = 0.0;				
+	double detuningVelocity = 0.0;				
 
-		for (int offset = m_dataStart; offset < GetSize(); offset += sizeof(ParameterValue<int>))
-		{
-			bool isOptional = *(bool*)((pointer + offset) + offsetof(ParameterValue<int>, optional));
-			if (excludeOptionals && isOptional) continue;
+	double transverse_kT = 2.0e-3;				
+	double longitudinal_kT_estimate = 0.0;		
+	double coolingEnergy = 0.15263;				
+	double cathodeRadius = 0.0012955;			
+	double expansionFactor = 30.0;				
 
-			char type = *(char*)((pointer + offset) + offsetof(ParameterValue<int>, type));
-			std::string name = *(std::string*)((pointer + offset) + offsetof(ParameterValue<int>, name));
-			std::string format = *(std::string*)((pointer + offset) + offsetof(ParameterValue<int>, format));
+	double electronCurrent = 1.2e-08;			
+	double cathodeTemperature = 300.0;			
+	double LLR = 1.9; 
 
-			void* value = ((pointer + offset) + offsetof(ParameterValue<int>, value));
+	double sigmaLabEnergy = 0.0;				
+	double extractionEnergy = 31.26;			
 
-			result += "# " + name + ": ";
-			switch (type)
-			{
-			case ParameterValue<int>::INT:
-				result += createLine(format, *(int*)value);
-				break;
-			case ParameterValue<int>::DOUBLE:
-				result += createLine(format, *(double*)value);
-				break;
-			case ParameterValue<int>::FLOAT_2:
-				result += createLine(format, (*(float2*)value).x, (*(float2*)value).y);
-				break;
-			case ParameterValue<int>::FLOAT_3:
-				result += createLine(format, (*(float3*)value).x, (*(float3*)value).y, (*(float3*)value).z);
-				break;
-			case ParameterValue<int>::BOOL:
-				result += createLine(format, *(bool*)value);
-				break;
-			case ParameterValue<int>::PATH:
-				result += createLine(format, (*(Path*)value).filename().string().c_str());
-				break;
-			}
-			result += "\n";
-		}
+	std::string densityFile = "density file";	
 
-		return result;
-	}
-	void fromString(std::string header)
-	{
-		std::istringstream stream(header);
-		std::string line;
-		bool foundSection = false;
+	// optional analytic beam shapes
+	bool gaussianElectronBeam = false;
+	bool cylindricalElectronBeam = false;
+	bool noElectronBeamBend = false;
+	double electronBeamRadius = 0.05;
+	double electronBeamDensity = 1;
+	bool fixedLongitudinalTemperature = false;
 
-		while (std::getline(stream, line))
-		{
-			line = line.substr(2);
-			std::string name, value;
+	// parameters to increase histogram resolution by interpolation
+	bool increaseHist = false;
+	int factor = 3;
 
-			// Create a stringstream for the line
-			std::stringstream lineStream(line);
+	bool mirrorAroundZ = true;
+	bool cutOutZeros = true;
 
-			// Read the name (everything before ':')
-			std::getline(lineStream, name, ':');
-			if (lineStream.eof())
-			{
-				// found our section
-				if (name == m_name)
-				{
-					foundSection = true;
-					continue;
-				}
-				// found different section
-				else
-				{
-					// end on the first section after our section
-					if (foundSection) break;
-				}
-			}
-			else
-			{
-				if (!foundSection) continue;
-
-				// Read the value (everything after ':')
-				std::getline(lineStream, value);
-			}
-			
-			//std::cout << "name: " << name << " value: " << value << std::endl;
-
-			void* object = getParameterValue(name);
-			if (!object) continue;
-
-			char type = *(char*)(object)+offsetof(ParameterValue<int>, type);
-
-			switch (type)
-			{
-			case ParameterValue<int>::INT:
-				((ParameterValue<int>*)object)->set(std::stoi(value));
-				break;
-			case ParameterValue<double>::DOUBLE:
-				((ParameterValue<double>*)object)->set(std::stod(value));
-				break;
-			case ParameterValue<int>::FLOAT_2:
-				((ParameterValue<float2>*)object)->set(float2(value));
-				break;
-			case ParameterValue<int>::FLOAT_3:
-				((ParameterValue<float3>*)object)->set(float3(value));
-				break;
-			case ParameterValue<int>::BOOL:
-				((ParameterValue<bool>*)object)->set(std::stoi(value));
-				break;
-			case ParameterValue<int>::PATH:
-				((ParameterValue<Path>*)object)->set(Path(value.substr(1)));
-				break;
-			}
-		}
-	}
-
-private:
-	template <typename... Args>
-	std::string createLine(std::string_view fmt, Args&&... args) const 
-	{
-		return fmt::format(fmt, std::forward<Args>(args)...);
-	}
-
-	void* getParameterValue(const std::string& name)
-	{
-		char* pointer = (char*)this;
-
-		for (int offset = m_dataStart; offset < GetSize(); offset += sizeof(ParameterValue<int>))
-		{
-			int type = *(int*)(pointer + offset) + offsetof(ParameterValue<int>, type);
-			std::string ParamValueName = *(std::string*)((pointer + offset) + offsetof(ParameterValue<int>, name));
-			if (ParamValueName == name)
-			{
-				return pointer + offset;
-			}
-		}
-		return nullptr;
-	}
-	virtual int GetSize() const = 0;
-
-protected:
-	std::string m_name = "";
-	void setName(std::string&& name) { m_name = std::move(name); }
-
-private:
-	// offset in memory where the data of derived classes start, comes from vtable (8 bytes atm) and members of Parameters
-	int m_dataStart = 8 + offsetof(Parameters, m_dataStart);
+	std::string ToString() const override;
+	void FromString(std::string& str) override;
+	bool ShowControls() override;
 };
+
+struct LabEnergyParameter : public Parameter
+{
+	double centerLabEnergy = 0.0;
+	double driftTubeVoltage = 0.0;
+	std::string energyFile = "lab energy file";
+
+	bool uniformLabEnergies = false;
+	bool noSpaceCharge = false;
+	bool interpolateEnergy = true;
+
+	std::string ToString() const override;
+	void FromString(std::string& str) override;
+	bool ShowControls() override;
+};
+
+struct IonBeamParameter : public Parameter
+{
+	float shift[2] = { 0.0f, 0.0f };	
+	float angles[2] = { 0.0f, 0.0f };	
+
+	// always one gaussian
+	float sigma[2] = { 0.01044f, 0.00455f };
+
+	// optional second gaussian
+	bool doubleGaussian = false;
+	double amplitude = 10.1;			
+	double amplitude2 = 1.0;
+	float sigma2[2] = { 0.001f, 0.001f };
+
+	std::string ToString() const override;
+	void FromString(std::string& str) override;
+	bool ShowControls() override;
+};
+
+
+struct OutputParameter : public Parameter
+{
+	float fitRange[2] = { 0.0f, 1.0f };		
+	double fitDetuningEnergy = 1.0;			
+	double fitLongitudinalTemperature = 0.0005;
+	double fitTransverseTemperature = 0.002;
+	double fitFWHM = 0.0;					
+	double fitScalingFactor = 0.0;			
+	double effectiveLength = 0.0;			
+
+	double FWHM = 0.0;						
+	double mainPeakPosition = 0.0;			
+	float distancesFWHM[2] = { 0.0f, 0.0f };
+
+	std::string ToString() const override;
+	void FromString(std::string& str) override;
+	bool ShowControls() override;
+};
+

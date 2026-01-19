@@ -8,7 +8,7 @@
 
 namespace MCMC
 {
-	static MCMC_Parameters parameters;
+	static MCMC_Parameter parameters;
 
 	// 3D Hist with main data
 	static TH3D* distribution = nullptr;
@@ -18,12 +18,8 @@ namespace MCMC
 	static float fullZRange[2] = { -0.7f, 0.7f };
 
 	// optional parameter
-	static bool changeSeed = true;
-	static bool automaticProposalStd = true;
-	static bool useInterpolation = false;
-	static bool generateAsync = true;
-	static bool limitZRange = false;
-	static float limitedZRange[2] = { -0.4f, 0.4f };
+	//static bool limitZRange = false;
+	//static float limitedZRange[2] = { -0.4f, 0.4f };
 
 	// plotting data
 	static ROOTCanvas* canvas = nullptr;
@@ -49,9 +45,9 @@ namespace MCMC
 	//std::subtract_with_carry_engine< std::uint_fast64_t, 48, 5, 12> generator; // is slightly faster but maybe less quality
 	//std::linear_congruential_engine<std::uint_fast32_t, 48271, 0, 2147483647> generator; // is even faster
 	static std::uniform_real_distribution<double> uniformDist = std::uniform_real_distribution<double>(0.0, 1.0);
-	static std::normal_distribution<double> normalDistX = std::normal_distribution<double>(0.0, parameters.proposalSigma.get().x);
-	static std::normal_distribution<double> normalDistY = std::normal_distribution<double>(0.0, parameters.proposalSigma.get().y);
-	static std::normal_distribution<double> normalDistZ = std::normal_distribution<double>(0.0, parameters.proposalSigma.get().z);
+	static std::normal_distribution<double> normalDistX = std::normal_distribution<double>(0.0, parameters.proposalSigma[0]);
+	static std::normal_distribution<double> normalDistY = std::normal_distribution<double>(0.0, parameters.proposalSigma[1]);
+	static std::normal_distribution<double> normalDistZ = std::normal_distribution<double>(0.0, parameters.proposalSigma[2]);
 
 	// Autocorrelation stuff
 	static bool showAutoCorrelationWindow = false;
@@ -80,12 +76,12 @@ namespace MCMC
 		}
 	}
 
-	MCMC_Parameters GetParameters()
+	MCMC_Parameter GetParameters()
 	{
 		return parameters;
 	}
 
-	void SetParameters(const MCMC_Parameters& params)
+	void SetParameters(const MCMC_Parameter& params)
 	{
 		parameters = params;
 	}
@@ -98,8 +94,8 @@ namespace MCMC
 	std::string GetTags()
 	{
 		std::string tags = "";
-		if(limitZRange) tags += Form("z samples %.3f - %.3f, ", limitedZRange[0], limitedZRange[1]);
-
+		//if(limitZRange) tags += Form("z samples %.3f - %.3f, ", limitedZRange[0], limitedZRange[1]);
+	
 		return tags;
 	}
 
@@ -126,16 +122,17 @@ namespace MCMC
 		}
 
 		// use the std of the target distribution as sigmas for proposal functions
-		if (automaticProposalStd)
+		if (parameters.automaticProposalStd)
 		{
-			parameters.proposalSigma.get().x = (float)target->GetStdDev(1);
-			parameters.proposalSigma.get().y = (float)target->GetStdDev(2);
-			parameters.proposalSigma.get().z = (float)target->GetStdDev(3);
-
-			normalDistX = std::normal_distribution<double>(0.0, parameters.proposalSigma.get().x);
-			normalDistY = std::normal_distribution<double>(0.0, parameters.proposalSigma.get().y);
-			normalDistZ = std::normal_distribution<double>(0.0, parameters.proposalSigma.get().z);
+			parameters.proposalSigma[0] = (float)target->GetStdDev(1);
+			parameters.proposalSigma[1] = (float)target->GetStdDev(2);
+			parameters.proposalSigma[2] = (float)target->GetStdDev(3);
 		}
+
+		normalDistX = std::normal_distribution<double>(0.0, parameters.proposalSigma[0]);
+		normalDistY = std::normal_distribution<double>(0.0, parameters.proposalSigma[1]);
+		normalDistZ = std::normal_distribution<double>(0.0, parameters.proposalSigma[2]);
+		
 
 		delete distribution;
 		distribution = (TH3D*)target->Clone("generated Histogram");
@@ -148,15 +145,15 @@ namespace MCMC
 		futures.reserve(numThreads);
 		interpolationTime = 0;
 
-		if (changeSeed)
+		if (parameters.changeSeed)
 		{
-			parameters.seed.set((int)std::time(0));
+			parameters.seed = ((int)std::time(0));
 		}
 		generatorList[0].seed(parameters.seed);
 
 		auto t_start = std::chrono::high_resolution_clock::now();
 
-		if (generateAsync)
+		if (parameters.generateAsync)
 		{
 			// Launch asynchronous tasks
 			for (unsigned int i = 0; i < numThreads; i++)
@@ -164,7 +161,7 @@ namespace MCMC
 				int length = parameters.numberSamples / numThreads;
 				int offset = i * length;
 				RNG_engine& generator = generatorList.at(i);
-				generator.seed(parameters.seed.get() + i);
+				generator.seed(parameters.seed + i);
 
 				futures.push_back(std::async(std::launch::async, &GenerateSubchain, length, offset, std::ref(generator)));
 			}
@@ -246,46 +243,19 @@ namespace MCMC
 		double y_proposed = current.y + normalDistY(generator);
 		//double z_proposed = current.z + normalDistZ(generator);
 		double z_proposed = 0.0;
-		if (limitZRange)
+		GeneralParameter genParams = General::GetParameters();
+
+		if (genParams.limitZRange)
 		{
-			z_proposed = limitedZRange[0] + (limitedZRange[1] - limitedZRange[0]) * uniformDist(generator);
+			z_proposed = genParams.limitedZRange[0] + (genParams.limitedZRange[1] - genParams.limitedZRange[0]) * uniformDist(generator);
 		}
 		else
 		{
 			z_proposed = fullZRange[0] + (fullZRange[1] - fullZRange[0]) * uniformDist(generator);
 		}
-		
-
-		// check if point is outside histogram domain
-		//if (x_proposed < target->GetXaxis()->GetXmin() || x_proposed > target->GetXaxis()->GetXmax() ||
-		//	y_proposed < target->GetYaxis()->GetXmin() || y_proposed > target->GetYaxis()->GetXmax() ||
-		//	z_proposed < target->GetZaxis()->GetXmin() || z_proposed > target->GetZaxis()->GetXmax())
-		//{
-		//	return false;
-		//}
-		//
-		//int x_nBins = target->GetXaxis()->GetNbins();
-		//int y_nBins = target->GetYaxis()->GetNbins();
-		//int z_nBins = target->GetZaxis()->GetNbins();
 
 		// compute probabilities
-		//auto t_int_start = std::chrono::high_resolution_clock::now();
-		double p_new = HistUtils::GetValueAtPosition(target, { x_proposed,y_proposed, z_proposed }, useInterpolation);
-		//if (useInterpolation)
-		//{
-		//	double x_modified = std::min(std::max(x_proposed, target->GetXaxis()->GetBinCenter(1)), target->GetXaxis()->GetBinCenter(x_nBins) - 1e-5);
-		//	double y_modified = std::min(std::max(y_proposed, target->GetYaxis()->GetBinCenter(1)), target->GetYaxis()->GetBinCenter(y_nBins) - 1e-5);
-		//	double z_modified = std::min(std::max(z_proposed, target->GetZaxis()->GetBinCenter(1)), target->GetZaxis()->GetBinCenter(z_nBins) - 1e-5);
-		//
-		//	p_new = target->Interpolate(x_modified, y_modified, z_modified);
-		//}
-		//else
-		//{
-		//	p_new = target->GetBinContent(target->FindBin(x_proposed, y_proposed, z_proposed));
-		//}
-
-		//auto t_int_end = std::chrono::high_resolution_clock::now();
-		//interpolationTime += std::chrono::duration<double, std::milli>(t_int_end - t_int_start).count();
+		double p_new = HistUtils::GetValueAtPosition(target, { x_proposed,y_proposed, z_proposed }, parameters.useInterpolation);
 
 		// acceptance ratio
 		double ratio = p_new / currentValue;
@@ -373,7 +343,7 @@ namespace MCMC
 			double sumY = 0;
 			double sumZ = 0;
 
-			for (int i = 0; i < parameters.numberSamples.get() - lag; i++)
+			for (int i = 0; i < parameters.numberSamples - lag; i++)
 			{
 				Point3D point = chain[i];
 				Point3D pointLag = chain[i + lag];
@@ -381,9 +351,9 @@ namespace MCMC
 				sumY += (point.y - means[1]) * (pointLag.y - means[1]);
 				sumZ += (point.z - means[2]) * (pointLag.z - means[2]);
 			}
-			autocorrX[lag] = sumX / (variances[0] * (parameters.numberSamples.get() - lag));
-			autocorrY[lag] = sumY / (variances[1] * (parameters.numberSamples.get() - lag));
-			autocorrZ[lag] = sumZ / (variances[2] * (parameters.numberSamples.get() - lag));
+			autocorrX[lag] = sumX / (variances[0] * (parameters.numberSamples - lag));
+			autocorrY[lag] = sumY / (variances[1] * (parameters.numberSamples - lag));
+			autocorrZ[lag] = sumZ / (variances[2] * (parameters.numberSamples - lag));
 
 			lagValues[lag] = lag;
 		}
@@ -497,59 +467,6 @@ namespace MCMC
 		}
 	}
 
-	void ShowParameterControls()
-	{
-		ImGui::BeginGroup();
-		ImGui::PushItemWidth(200.0f);
-
-		if (ImGui::InputInt("chain length", parameters.numberSamples))
-		{
-			parameters.numberSamples.get() = ((parameters.numberSamples.get() + numThreads - 1) / numThreads) * numThreads;
-
-		}
-		ImGuiUtils::TextTooltip("number of final samples in the chain after burn-in and including the lag. Actual number of computed samples is higher.");
-		ImGui::InputInt("burn in", parameters.burnIn);
-		ImGuiUtils::TextTooltip("number of initial samples that are discarded.");
-		ImGui::InputInt("lag", parameters.lag);
-		ImGuiUtils::TextTooltip("number of samples that are skipped between two recorded samples.");
-		ImGui::BeginDisabled(!limitZRange);
-		ImGui::InputFloat2("##zRange", limitedZRange);
-		ImGui::EndDisabled();
-		ImGui::SameLine();
-		ImGui::Checkbox("limit z range", &limitZRange);
-
-		ImGui::BeginDisabled(automaticProposalStd);
-		if (ImGui::InputFloat3("##proposal sigmas", parameters.proposalSigma, "%.4f"))
-		{
-			normalDistX = std::normal_distribution<double>(0.0, parameters.proposalSigma.get().x);
-			normalDistY = std::normal_distribution<double>(0.0, parameters.proposalSigma.get().y);
-			normalDistZ = std::normal_distribution<double>(0.0, parameters.proposalSigma.get().z);
-		}
-		ImGuiUtils::TextTooltip("standard deviations of the normal distributions used to propose new samples in x,y,z");
-		ImGui::EndDisabled();
-		ImGui::SameLine();
-		ImGui::Checkbox("auto set proposal sigma (x,y,z)", &automaticProposalStd);
-		ImGuiUtils::TextTooltip("sets the proposal sigmas to the standard deviations of the target distribution in x,y,z");
-
-		ImGui::BeginDisabled(changeSeed);
-		ImGui::InputInt("##seed", parameters.seed);
-		ImGuiUtils::TextTooltip("seed for the random number generator");
-		ImGui::EndDisabled();
-		ImGui::SameLine();
-		ImGui::Checkbox("auto seed", &changeSeed);
-		ImGuiUtils::TextTooltip("sets the seed to the current time");
-		
-		ImGui::SeparatorText("generation options");
-		ImGui::Checkbox("async", &generateAsync);
-		ImGuiUtils::TextTooltip("generates the chain using multiple threads asynchronously");
-		ImGui::SameLine();
-		ImGui::Checkbox("interpolate", &useInterpolation);
-		ImGuiUtils::TextTooltip("uses interpolation to get values between histogram bins instead of the closest bin value.");
-
-		ImGui::PopItemWidth();
-		ImGui::EndGroup();
-	}
-
 	void ShowPlots()
 	{
 		if (ImPlot::BeginSubplots("##mcmc subplots", 2, 3, ImVec2(-1, -1), ImPlotSubplotFlags_ShareItems))
@@ -626,6 +543,11 @@ namespace MCMC
 
 			ImGui::End();
 		}
+	}
+
+	void ShowParameterControls()
+	{
+		parameters.ShowControls();
 	}
 
 }

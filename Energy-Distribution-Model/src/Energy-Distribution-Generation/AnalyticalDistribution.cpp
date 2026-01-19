@@ -1,7 +1,7 @@
 #include "pch.h"
 
 #include "AnalyticalDistribution.h"
-#include "ParameterImplementations.h"
+#include "Parameter.h"
 #include "EnergyDistribution.h"
 
 namespace AnalyticalDistribution
@@ -245,8 +245,8 @@ namespace AnalyticalDistribution
 				{
 					EnergyDistribution& eDist = *(EnergyDistribution*)payload->Data;
 					const auto& parameter = eDist.GetOutputParameters();
-					energyRange[0] = std::max(1e-6f, parameter.fitRange.get().x);
-					energyRange[1] = parameter.fitRange.get().y;
+					energyRange[0] = std::max(1e-6f, parameter.fitRange[0]);
+					energyRange[1] = parameter.fitRange[1];
 					scale = parameter.fitScalingFactor;
 					E_d = parameter.fitDetuningEnergy;
 					kT_long = parameter.fitLongitudinalTemperature;

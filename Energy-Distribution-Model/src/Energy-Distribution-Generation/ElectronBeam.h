@@ -3,7 +3,7 @@
 #include "Point3D.h"
 
 #include "HistData3D.h"
-#include "ParameterImplementations.h"
+#include "Parameter.h"
 
 namespace ElectronBeam
 {
@@ -12,8 +12,8 @@ namespace ElectronBeam
 	void SetupDistribution(std::filesystem::path densityfile);
 
 	TH3D* Get();
-	ElectronBeamParameters GetParameters();
-	void SetParameters(const ElectronBeamParameters& params);
+	ElectronBeamParameter GetParameters();
+	void SetParameters(const ElectronBeamParameter& params);
 
 	TVector3 GetDirection(double z);
 	TVector3 GetVelocity(double z, double energy);

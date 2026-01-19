@@ -11,25 +11,13 @@
 
 namespace ElectronBeam
 {
-	static ElectronBeamParameters parameter;
+	static ElectronBeamParameter parameters;
 
 	// 3D Hist with main data
 	static TH3D* beam = nullptr;
 
 	// optional parameters
-	static bool gaussianElectronBeam = false;
-	static bool cylindricalElectronBeam = false;
-	static bool noElectronBeamBend = false;
-	static double electronBeamRadius = 0.05;
-	static double electronBeamDensity = 1;
-	static bool fixedLongitudinalTemperature = false;
-
-	// parameters to increase histogram resolution by interpolation
-	static bool increaseHist = false;
-	static int factor = 3;
-
-	static bool mirrorAroundZ = true;
-	static bool cutOutZeros = true;
+	
 
 	// plotting data
 	static ROOTCanvas* canvas = nullptr;
@@ -60,7 +48,7 @@ namespace ElectronBeam
 	void SetupDistribution(std::filesystem::path densityfile)
 	{
 		delete beam;
-		if (gaussianElectronBeam || cylindricalElectronBeam)
+		if (parameters.gaussianElectronBeam || parameters.cylindricalElectronBeam)
 		{
 			beam = GenerateElectronBeamDensity();
 		}
@@ -72,19 +60,19 @@ namespace ElectronBeam
 
 	void CalculateDetuningEnergy()
 	{
-		parameter.detuningEnergy = pow(sqrt(LabEnergy::GetCenterLabEnergy()) - sqrt(parameter.coolingEnergy), 2);
+		parameters.detuningEnergy = pow(sqrt(LabEnergy::GetCenterLabEnergy()) - sqrt(parameters.coolingEnergy), 2);
 	}
 
 	void CalculateDetuningVelocity()
 	{
 		double electronVel = TMath::Sqrt(2 * LabEnergy::GetCenterLabEnergy() * TMath::Qe() / PhysicalConstants::electronMass);
-		double ionVel = TMath::Sqrt(2 * parameter.coolingEnergy * TMath::Qe() / PhysicalConstants::electronMass);
-		parameter.detuningVelocity = ionVel - electronVel;
+		double ionVel = TMath::Sqrt(2 * parameters.coolingEnergy * TMath::Qe() / PhysicalConstants::electronMass);
+		parameters.detuningVelocity = ionVel - electronVel;
 	}
 
 	void CalculateEstimateLongkT()
 	{
-		parameter.longitudinal_kT_estimate = GetLongitudinal_kT(LabEnergy::GetCenterLabEnergy());
+		parameters.longitudinal_kT_estimate = GetLongitudinal_kT(LabEnergy::GetCenterLabEnergy());
 	}
 
 	double GetVelocityMagnitude(double energy)
@@ -94,31 +82,31 @@ namespace ElectronBeam
 
 	double GetLongitudinal_kT(double labEnergy)
 	{
-		if (fixedLongitudinalTemperature)
+		if (parameters.fixedLongitudinalTemperature)
 		{
-			return parameter.longitudinal_kT_estimate;
+			return parameters.longitudinal_kT_estimate;
 		}
 
 		// intermediate unit is [J] final unit is [eV]
-		double A = (1. + TMath::Power((parameter.expansionFactor - 1.) / parameter.expansionFactor, 2.))
-			* (TMath::Power(TMath::K() * parameter.cathodeTemperature, 2.)) / (2. * TMath::Qe() * labEnergy);
+		double A = (1. + TMath::Power((parameters.expansionFactor - 1.) / parameters.expansionFactor, 2.))
+			* (TMath::Power(TMath::K() * parameters.cathodeTemperature, 2.)) / (2. * TMath::Qe() * labEnergy);
 		double B = 2.544008e-27;
 
-		double C = parameter.LLR * TMath::Power(parameter.cathodeRadius, -2 / 3.) * TMath::Power(parameter.electronCurrent, 1 / 3.)
-			* TMath::Power(parameter.extractionEnergy * TMath::Qe(), -1 / 6.) * parameter.extractionEnergy / labEnergy;
+		double C = parameters.LLR * TMath::Power(parameters.cathodeRadius, -2 / 3.) * TMath::Power(parameters.electronCurrent, 1 / 3.)
+			* TMath::Power(parameters.extractionEnergy * TMath::Qe(), -1 / 6.) * parameters.extractionEnergy / labEnergy;
 
-		double D = TMath::Power(parameter.sigmaLabEnergy * TMath::Qe(), 2.) / (2. * TMath::Qe() * labEnergy);
+		double D = TMath::Power(parameters.sigmaLabEnergy * TMath::Qe(), 2.) / (2. * TMath::Qe() * labEnergy);
 		return (A + B * C + D) / TMath::Qe();
 	}
 
 	double GetTransverse_kT()
 	{
-		return parameter.transverse_kT;
+		return parameters.transverse_kT;
 	}
 
 	double GetCoolingEnergy()
 	{
-		return parameter.coolingEnergy;
+		return parameters.coolingEnergy;
 	}
 
 	double GetDensity(const Point3D& point)
@@ -128,28 +116,28 @@ namespace ElectronBeam
 
 	void SetElectronCurrent(double current)
 	{
-		parameter.electronCurrent = current;
+		parameters.electronCurrent = current;
 	}
 
 	std::string GetTags()
 	{
 		std::string tags = "";
-		if (gaussianElectronBeam) tags += "e-gaus, ";
-		if (cylindricalElectronBeam) tags += "e-cylinder, ";
-		if (noElectronBeamBend) tags += "no bend, ";
-		if (fixedLongitudinalTemperature) tags += "fixed kT||, ";
+		if (parameters.gaussianElectronBeam) tags += "e-gaus, ";
+		if (parameters.cylindricalElectronBeam) tags += "e-cylinder, ";
+		if (parameters.noElectronBeamBend) tags += "no bend, ";
+		if (parameters.fixedLongitudinalTemperature) tags += "fixed kT||, ";
 
 		return tags;
 	}
 
-	ElectronBeamParameters GetParameters()
+	ElectronBeamParameter GetParameters()
 	{
-		return parameter;
+		return parameters;
 	}
 
-	void SetParameters(const ElectronBeamParameters& params)
+	void SetParameters(const ElectronBeamParameter& params)
 	{
-		parameter = params;
+		parameters = params;
 	}
 
 	std::string GetSelectedBeamLabel()
@@ -164,18 +152,18 @@ namespace ElectronBeam
 		if (!file.empty())
 		{
 			TH3D* result = FileUtils::LoadMatrixFile(file);
-			if(cutOutZeros) 
+			if(parameters.cutOutZeros)
 				result = CutZerosFromDistribution(result);
 
-			if (mirrorAroundZ)
+			if (parameters.mirrorAroundZ)
 				result = MirrorDistributionAtZ(result);
 
-			if (increaseHist)
+			if (parameters.increaseHist)
 				result = CreateLargeDistribution(result);
 			
 			result->SetTitle("electron distribution");
 			result->SetName("electron distribution");
-			parameter.densityFile.set(file);
+			parameters.densityFile = file.filename().string();
 
 			return result;
 		}
@@ -221,7 +209,7 @@ namespace ElectronBeam
 
 	TVector3 GetDirection(double z)
 	{
-		if (noElectronBeamBend)
+		if (parameters.noElectronBeamBend)
 			return TVector3(0, 0, 1);
 
 		double derivative = Derivative(z);
@@ -362,9 +350,9 @@ namespace ElectronBeam
 
 	TH3D* CreateLargeDistribution(TH3D* input)
 	{
-		int numberBinsX = input->GetNbinsX() * factor;
-		int numberBinsY = input->GetNbinsY() * factor;
-		int numberBinsZ = input->GetNbinsZ() * factor;
+		int numberBinsX = input->GetNbinsX() * parameters.factor;
+		int numberBinsY = input->GetNbinsY() * parameters.factor;
+		int numberBinsZ = input->GetNbinsZ() * parameters.factor;
 
 		double firstBinCenterX = input->GetXaxis()->GetBinCenter(1);
 		double firstBinCenterY = input->GetYaxis()->GetBinCenter(1);
@@ -434,21 +422,22 @@ namespace ElectronBeam
 
 					double ymean = 0;
 					double value = 0;
-					if (!noElectronBeamBend)
+					if (!parameters.noElectronBeamBend)
 					{
 						ymean = Trajectory(z);
 					}
-					if (gaussianElectronBeam)
+					if (parameters.gaussianElectronBeam)
 					{
 						// Calculate the value using the Gaussian distribution centered at z = 0
-						value = electronBeamDensity * exp(-(x * x + (y - ymean) * (y - ymean)) / (2.0 * pow(electronBeamRadius, 2)));
+						value = parameters.electronBeamDensity * exp(-(x * x + (y - ymean) * (y - ymean)) /
+							(2.0 * pow(parameters.electronBeamRadius, 2)));
 					}
-					else if (cylindricalElectronBeam)
+					else if (parameters.cylindricalElectronBeam)
 					{
-						if (x * x + (y - ymean) * (y - ymean) <= pow(electronBeamRadius, 2))
+						if (x * x + (y - ymean) * (y - ymean) <= pow(parameters.electronBeamRadius, 2))
 						{
 							// if inside the cylinder, set the value to an arbitrary constant value
-							value = electronBeamDensity;
+							value = parameters.electronBeamDensity;
 						}
 					}
 					eBeam->SetBinContent(i, j, k, value);
@@ -551,15 +540,15 @@ namespace ElectronBeam
 					}
 				}
 				ImGui::SameLine();
-				ImGui::BeginDisabled(!(cylindricalElectronBeam || gaussianElectronBeam));
+				ImGui::BeginDisabled(!(parameters.cylindricalElectronBeam || parameters.gaussianElectronBeam));
 				if (ImGui::Button("generate density"))
 				{
 					TH3D* hist = GenerateElectronBeamDensity();
 
 					HistData3D newBeam(hist);
-					std::string shape = gaussianElectronBeam ? "gaussian" : "cylindrical";
-					std::string bend = noElectronBeamBend ? "no bend" : "";
-					std::string radius = std::to_string(electronBeamRadius);
+					std::string shape = parameters.gaussianElectronBeam ? "gaussian" : "cylindrical";
+					std::string bend = parameters.noElectronBeamBend ? "no bend" : "";
+					std::string radius = std::to_string(parameters.electronBeamRadius);
 					newBeam.SetLabel(shape + " beam, radius " + radius + " " + bend);
 					AddBeamToList(newBeam);
 				}
@@ -641,73 +630,7 @@ namespace ElectronBeam
 
 	void ShowParameterControls()
 	{
-		ImGui::BeginGroup();
-
-		ImGui::PushItemWidth(90.0f);
-
-		ImGui::Checkbox("use fixed longitudinal kT", &fixedLongitudinalTemperature);
-		ImGui::BeginDisabled(!fixedLongitudinalTemperature);
-		ImGui::InputDouble("longitudinal kT [eV]", parameter.longitudinal_kT_estimate);
-		ImGui::EndDisabled();
-		ImGui::InputDouble("cooling energy [eV]", parameter.coolingEnergy);
-		ImGui::InputDouble("transverse kT [eV]", parameter.transverse_kT);
-		ImGui::BeginDisabled(fixedLongitudinalTemperature);
-		ImGui::InputDouble("cathode radius [m]", parameter.cathodeRadius);
-		ImGui::InputDouble("cathode Temperature [K]", parameter.cathodeTemperature);
-		ImGui::InputDouble("extraction energy [eV]", parameter.extractionEnergy);
-		ImGuiUtils::TextTooltip("extraction energy after space charge and contact potential correction");
-		ImGui::InputDouble("expansion factor", parameter.expansionFactor);
-		ImGui::InputDouble("LLR", parameter.LLR);
-		ImGui::InputDouble("sigma lab energy [eV]", parameter.sigmaLabEnergy);
-		ImGui::EndDisabled();
-
-		ImGui::SeparatorText("Loading options");
-		ImGui::Checkbox("increase bin number", &increaseHist);
-		ImGuiUtils::TextTooltip("artificially increases the number of bins by an odd factor by interpolating. Increases computation time.");
-		ImGui::SameLine();
-		ImGui::BeginDisabled(!increaseHist);
-		if (ImGui::InputInt("factor", &factor, 2))
-		{
-			// only allow odd factors above 0
-			if (factor % 2 == 0) factor -= 1;
-			if (factor < 1) factor = 1;
-		}
-		ImGui::EndDisabled();
-
-		ImGui::Checkbox("mirror around z-axis", &mirrorAroundZ);
-		ImGuiUtils::TextTooltip("mirrors all values to fill the negative z range");
-		ImGui::SameLine();
-		ImGui::Checkbox("cut out zeros", &cutOutZeros);
-
-		ImGui::SeparatorText("special beam shapes");
-		if (ImGui::Checkbox("gaussian", &gaussianElectronBeam))
-		{
-			parameter.densityFile.get().clear();
-			cylindricalElectronBeam = false;
-
-			// remove bend if unticked
-			if (!gaussianElectronBeam)
-				noElectronBeamBend = false;
-		}
-		ImGui::SameLine();
-		if (ImGui::Checkbox("cylindrical", &cylindricalElectronBeam))
-		{
-			parameter.densityFile.get().clear();
-			gaussianElectronBeam = false;
-
-			// remove bend if unticked
-			if (!cylindricalElectronBeam)
-				noElectronBeamBend = false;
-		}
-		ImGui::BeginDisabled(!(gaussianElectronBeam || cylindricalElectronBeam));
-		ImGui::SameLine();
-		ImGui::Checkbox("no bend", &noElectronBeamBend);
-		ImGui::InputDouble("radius [m]", &electronBeamRadius);
-		ImGui::InputDouble("density [1/m^3]", &electronBeamDensity, 0, 0, "%.2e");
-		ImGui::EndDisabled();
-
-		ImGui::PopItemWidth();
-		ImGui::EndGroup();
+		parameters.ShowControls();
 	}
 
 	void ShowPlots()

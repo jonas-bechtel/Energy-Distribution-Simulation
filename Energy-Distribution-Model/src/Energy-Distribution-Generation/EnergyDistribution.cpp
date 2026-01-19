@@ -5,6 +5,7 @@
 #include "IonBeam.h"
 #include "LabEnergies.h"
 #include "MCMC.h"
+#include "Parameter.h"
 
 #include "AnalyticalDistribution.h"
 #include "Constants.h"
@@ -21,8 +22,8 @@ double GetFWHM(TF1* function)
 {
 	double maxValue = function->GetMaximum();
 	double XofMax = function->GetMaximumX();
-	double xLeft = function->GetX(maxValue / 2, std::max(0.0, XofMax - 1), XofMax);
-	double xRight = function->GetX(maxValue / 2, XofMax, XofMax + 1);
+	double xLeft = function->GetX(maxValue / 2, std::max(0.0, XofMax - 3), XofMax);
+	double xRight = function->GetX(maxValue / 2, XofMax, XofMax + 3);
 
 	return xRight - xLeft;
 }
@@ -57,6 +58,7 @@ EnergyDistribution::EnergyDistribution(EnergyDistribution&& other) noexcept
 	ionBeamParameter = other.ionBeamParameter;
 	labEnergiesParameter = other.labEnergiesParameter;
 	outputParameter = other.outputParameter;
+	generalParameter = other.generalParameter;
 
 	label = std::move(other.label);
 	tags = std::move(other.tags);
@@ -92,6 +94,7 @@ EnergyDistribution& EnergyDistribution::operator=(EnergyDistribution&& other) no
 	ionBeamParameter = other.ionBeamParameter;
 	labEnergiesParameter = other.labEnergiesParameter;
 	outputParameter = other.outputParameter;
+	generalParameter = other.generalParameter;
 
 	label = std::move(other.label);
 	tags = std::move(other.tags);
@@ -119,6 +122,7 @@ void EnergyDistribution::CopyParameters()
 	eBeamParameter = ElectronBeam::GetParameters();
 	ionBeamParameter = IonBeam::GetParameters();
 	labEnergiesParameter = LabEnergy::GetParameters();
+	generalParameter = General::GetParameters();
 }
 
 void EnergyDistribution::ResetDefaultValues()
@@ -130,17 +134,17 @@ void EnergyDistribution::ResetDefaultValues()
 
 void EnergyDistribution::SetupLabellingThings()
 {
-	if (!eBeamParameter.densityFile.get().empty() && !labEnergiesParameter.energyFile.get().empty())
+	if (!eBeamParameter.densityFile.empty() && !labEnergiesParameter.energyFile.empty())
 	{
-		index = std::stoi(eBeamParameter.densityFile.get().filename().string().substr(0, 4));
+		index = std::stoi(eBeamParameter.densityFile.substr(0, 4));
 	}
 
 	tags += MCMC::GetTags();
 	tags += ElectronBeam::GetTags();
 	tags += LabEnergy::GetTags();
 	tags += IonBeam::GetTags();
-	label = Form("%d: U drift = %.2fV, E_d = %.4f", index, labEnergiesParameter.driftTubeVoltage.get(),
-		eBeamParameter.detuningEnergy.get());
+	label = Form("%d: U drift = %.2fV, E_d = %.4f", index, labEnergiesParameter.driftTubeVoltage,
+		eBeamParameter.detuningEnergy);
 }
 
 void EnergyDistribution::SetupBinning(const BinningSettings& binSettings)
@@ -322,7 +326,8 @@ void EnergyDistribution::CalculateFWHM()
 
 	if (std::abs(energyOfMaxValue - eBeamParameter.detuningEnergy) > 1)
 	{
-		std::cout << "maximum value position and detuning energy do not match: " << energyOfMaxValue << " != " << eBeamParameter.detuningEnergy.get() << std::endl;
+		std::cout << "maximum value position and detuning energy do not match: " << 
+			energyOfMaxValue << " != " << eBeamParameter.detuningEnergy << std::endl;
 	}
 
 	double energyRight;
@@ -358,7 +363,8 @@ void EnergyDistribution::CalculateFWHM()
 
 	outputParameter.FWHM = energyRight - energyLeft;
 	outputParameter.mainPeakPosition = energyOfMaxValue;
-	outputParameter.distancesFWHM = { (float)(energyOfMaxValue - energyLeft), (float)(energyRight - energyOfMaxValue) };
+	outputParameter.distancesFWHM[0] = (float)(energyOfMaxValue - energyLeft);
+	outputParameter.distancesFWHM[1] = (float)(energyRight - energyOfMaxValue);
 }
 
 void EnergyDistribution::FitAnalyticalToPeak(const PeakFitSettings& settings)
@@ -368,7 +374,7 @@ void EnergyDistribution::FitAnalyticalToPeak(const PeakFitSettings& settings)
 	double kT_long = eBeamParameter.longitudinal_kT_estimate;
 
 	constexpr int nParameter = 4;
-	
+
 	// first parameter is a scaling factor
 	double initialGuess[nParameter] = { 1, detuningEnergy, kt_trans, kT_long };
 
@@ -384,11 +390,11 @@ void EnergyDistribution::FitAnalyticalToPeak(const PeakFitSettings& settings)
 		{
 			double maxValue = fitFunction->GetMaximum();
 			double XofMax = fitFunction->GetMaximumX();
-			double energyMin = fitFunction->GetX(maxValue / 8, std::max(0.0, XofMax - 1), XofMax);   //std::max(0.0, fitFunction->GetMaximumX() - 1 * peakWidthGuess);
-			double energyMax = fitFunction->GetX(maxValue / 8, XofMax, XofMax + 1);     //std::max(0.002, fitFunction->GetMaximumX() + 1 * peakWidthGuess);
+			double energyMin = fitFunction->GetX(maxValue / 4, std::max(0.0, XofMax - 3.0), XofMax);   //std::max(0.0, fitFunction->GetMaximumX() - 1 * peakWidthGuess);
+			double energyMax = fitFunction->GetX(maxValue / 4, XofMax, XofMax + 3.0);     //std::max(0.002, fitFunction->GetMaximumX() + 1 * peakWidthGuess);
 			fitFunction->SetRange(energyMin, energyMax);
 		}
-		
+
 		double* parameter = fitFunction->GetParameters();
 		//std::cout << parameter[1] << ", " << parameter[2] << ", " << parameter[3] << std::endl;
 		settings.freeDetuningEnergy[i] ? fitFunction->ReleaseParameter(1) : fitFunction->FixParameter(1, parameter[1]);
@@ -396,12 +402,13 @@ void EnergyDistribution::FitAnalyticalToPeak(const PeakFitSettings& settings)
 		settings.freekT_long[i] ? fitFunction->ReleaseParameter(3) : fitFunction->FixParameter(3, parameter[3]);
 		Fit(fitFunction, "QRN0");
 	}
-	
+
 	// set all fit results
 	double* fitParameter = fitFunction->GetParameters();
 	double rangeMin, rangeMax;
 	fitFunction->GetRange(rangeMin, rangeMax);
-	outputParameter.fitRange = { (float)rangeMin, (float)rangeMax };
+	outputParameter.fitRange[0] = (float)rangeMin;
+	outputParameter.fitRange[1] = (float)rangeMax;
 	outputParameter.fitDetuningEnergy = fitParameter[1];
 	outputParameter.fitTransverseTemperature = fitParameter[2];
 	outputParameter.fitLongitudinalTemperature = fitParameter[3];
@@ -661,30 +668,35 @@ void EnergyDistribution::SetNormalised(bool normalised)
 
 double EnergyDistribution::GetDetuningEnergy() const
 {
-	return eBeamParameter.detuningEnergy.get();
+	return eBeamParameter.detuningEnergy;
 }
 
-ElectronBeamParameters EnergyDistribution::GetElectronBeamParameters() const
+ElectronBeamParameter EnergyDistribution::GetElectronBeamParameters() const
 {
 	return eBeamParameter;
 }
 
-IonBeamParameters EnergyDistribution::GetIonBeamParameters() const
+IonBeamParameter EnergyDistribution::GetIonBeamParameters() const
 {
 	return ionBeamParameter;
 }
 
-LabEnergyParameters EnergyDistribution::GetLabEnergyParameters() const
+LabEnergyParameter EnergyDistribution::GetLabEnergyParameters() const
 {
 	return labEnergiesParameter;
 }
 
-MCMC_Parameters EnergyDistribution::GetMCMCParameters() const
+MCMC_Parameter EnergyDistribution::GetMCMCParameters() const
 {
 	return mcmcParameter;
 }
 
-OutputParameters EnergyDistribution::GetOutputParameters() const
+GeneralParameter EnergyDistribution::GetGeneralParameters() const
+{
+	return generalParameter;
+}
+
+OutputParameter EnergyDistribution::GetOutputParameters() const
 {
 	return outputParameter;
 }
@@ -785,12 +797,13 @@ void EnergyDistribution::Load(const std::filesystem::path& file)
 
 	std::string header = FileUtils::GetHeaderFromFile(histFile);
 	
-	eBeamParameter.fromString(header);
-	ionBeamParameter.fromString(header);
-	labEnergiesParameter.fromString(header);
-	mcmcParameter.fromString(header);
-	outputParameter.fromString(header);
-	std::cout << mcmcParameter.toString() << std::endl;
+	eBeamParameter.FromString(header);
+	ionBeamParameter.FromString(header);
+	labEnergiesParameter.FromString(header);
+	mcmcParameter.FromString(header);
+	outputParameter.FromString(header);
+	generalParameter.FromString(header);
+
 	SetupLabellingThings();
 
 	std::string line;
@@ -871,8 +884,6 @@ void EnergyDistribution::LoadSamples(const std::filesystem::path& file)
 			std::cout << "Read different number of bytes than expected. Read: "
 				<< bytesRead << ", Expected: " << numberSamples * sizeof(double) << "\n";
 		}
-		std::cout << " number samples: " << numberSamples << std::endl;;
-		std::cout << "size of double: " << sizeof(double) << std::endl;
 	}
 	
 	std::cout << "\tsamples file found";
@@ -882,11 +893,12 @@ void EnergyDistribution::LoadSamples(const std::filesystem::path& file)
 std::string EnergyDistribution::GetHeaderString() const
 {
 	std::string string = 
-		eBeamParameter.toString() +
-		labEnergiesParameter.toString() +
-		ionBeamParameter.toString() +
-		mcmcParameter.toString() +
-		outputParameter.toString();
+		eBeamParameter.ToString() +
+		labEnergiesParameter.ToString() +
+		ionBeamParameter.ToString() +
+		mcmcParameter.ToString() +
+		generalParameter.ToString() +
+		outputParameter.ToString();
 
 	return string;
 }
@@ -898,7 +910,7 @@ std::string EnergyDistribution::Filename() const
 	//eCoolSS << std::fixed << std::setprecision(3) << eBeamParameter.coolingEnergy.get();
 	indexSS << std::setw(4) << std::setfill('0') << index;
 
-	std::string string = indexSS.str() + std::string(Form(" E_d %.4feV", eBeamParameter.detuningEnergy.get()));
+	std::string string = indexSS.str() + std::string(Form(" E_d %.4feV", eBeamParameter.detuningEnergy));
 
 	return string;
 }

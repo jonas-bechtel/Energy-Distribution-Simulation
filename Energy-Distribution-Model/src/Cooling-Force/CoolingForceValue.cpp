@@ -40,6 +40,7 @@ namespace CoolingForce
 		eBeamParameter = other.eBeamParameter;
 		ionBeamParameter = other.ionBeamParameter;
 		labEnergiesParameter = other.labEnergiesParameter;
+		generalParameter = other.generalParameter;
 
 		label = std::move(other.label);
 		tags = std::move(other.tags);
@@ -60,6 +61,7 @@ namespace CoolingForce
 		eBeamParameter = other.eBeamParameter;
 		ionBeamParameter = other.ionBeamParameter;
 		labEnergiesParameter = other.labEnergiesParameter;
+		generalParameter = other.generalParameter;
 
 		label = std::move(other.label);
 		tags = std::move(other.tags);
@@ -84,10 +86,12 @@ namespace CoolingForce
 		float yHigh = 5.0 * sigmaY;
 		float zLow = -0.7;
 		float zHigh = 0.7;
-		if (IonBeam::IsRangeLimited())
+
+		GeneralParameter genParams = General::GetParameters();
+		if (genParams.limitZRange)
 		{
-			zLow = IonBeam::GetLimitedRange()[0];
-			zHigh = IonBeam::GetLimitedRange()[1];
+			zLow = genParams.limitedZRange[0];
+			zHigh = genParams.limitedZRange[1];
 		}
 
 		TF3 func("integral func", this, &Value::Integrand, xLow, xHigh, yLow, yHigh, zLow, zHigh, 0, 3);
@@ -181,19 +185,24 @@ namespace CoolingForce
 		force3D.UpdateSlice(zValue);
 	}
 
-	ElectronBeamParameters Value::GetElectronBeamParameters() const
+	ElectronBeamParameter Value::GetElectronBeamParameters() const
 	{
 		return eBeamParameter;
 	}
 
-	IonBeamParameters Value::GetIonBeamParameters() const
+	IonBeamParameter Value::GetIonBeamParameters() const
 	{
 		return ionBeamParameter;
 	}
 
-	LabEnergyParameters Value::GetLabEnergyParameters() const
+	LabEnergyParameter Value::GetLabEnergyParameters() const
 	{
 		return labEnergiesParameter;
+	}
+
+	GeneralParameter Value::GetGeneralParameters() const
+	{
+		return generalParameter;
 	}
 
 	void Value::Save(std::filesystem::path folder) const
@@ -235,12 +244,14 @@ namespace CoolingForce
 
 		// Read metadata
 		TNamed* header = (TNamed*)infile.Get("header");
-		std::cout << header->GetTitle() << std::endl;
+		std::string headerString = header->GetTitle();
+		std::cout << headerString << std::endl;
 		if (header)
 		{
-			eBeamParameter.fromString(header->GetTitle());
-			ionBeamParameter.fromString(header->GetTitle());
-			labEnergiesParameter.fromString(header->GetTitle());
+			eBeamParameter.FromString(headerString);
+			ionBeamParameter.FromString(headerString);
+			labEnergiesParameter.FromString(headerString);
+			generalParameter.FromString(headerString);
 		}
 		SetupLabel();
 
@@ -407,17 +418,18 @@ namespace CoolingForce
 		eBeamParameter = ElectronBeam::GetParameters();
 		ionBeamParameter = IonBeam::GetParameters();
 		labEnergiesParameter = LabEnergy::GetParameters();
+		generalParameter = General::GetParameters();
 	}
 
 	void Value::SetupLabel()
 	{
-		if (!eBeamParameter.densityFile.get().empty() && !labEnergiesParameter.energyFile.get().empty())
+		if (!eBeamParameter.densityFile.empty() && !labEnergiesParameter.energyFile.empty())
 		{
-			index = std::stoi(eBeamParameter.densityFile.get().filename().string().substr(0, 4));
+			index = std::stoi(eBeamParameter.densityFile.substr(0, 4));
 		}
 
-		label = Form("%d: U drift = %.2fV, v_d = %.1f", index, labEnergiesParameter.driftTubeVoltage.get(),
-			eBeamParameter.detuningVelocity.get());
+		label = Form("%d: U drift = %.2fV, v_d = %.1f", index, labEnergiesParameter.driftTubeVoltage,
+			eBeamParameter.detuningVelocity);
 	}
 
 	void Value::SetupTags()
@@ -440,9 +452,10 @@ namespace CoolingForce
 	std::string Value::GetHeaderString() const
 	{
 		std::string string =
-			eBeamParameter.toString() +
-			labEnergiesParameter.toString() +
-			ionBeamParameter.toString(false);
+			eBeamParameter.ToString() +
+			labEnergiesParameter.ToString() +
+			ionBeamParameter.ToString() + 
+			generalParameter.ToString();
 
 		return string;
 	}
@@ -452,7 +465,7 @@ namespace CoolingForce
 		std::ostringstream indexSS;
 		indexSS << std::setw(4) << std::setfill('0') << index;
 
-		std::string string = indexSS.str() + std::string(Form(" v_d %.0fmps", eBeamParameter.detuningVelocity.get()));
+		std::string string = indexSS.str() + std::string(Form(" v_d %.0fmps", eBeamParameter.detuningVelocity));
 
 		return string;
 	}
