@@ -19,7 +19,7 @@ namespace BoltzmannDistribution
 		return 2.0 * sqrt(energy / TMath::Pi()) * pow(1.0 / kB_T, 1.5) * exp(-energy / kB_T);
 	}
 
-	void Update(CrossSection& currentCS)
+	void Update(const CrossSection& currentCS)
 	{
 		float step = (energyRange[1] - energyRange[0]) / 1999;
 		for (int i = 0; i < 2000; i++)

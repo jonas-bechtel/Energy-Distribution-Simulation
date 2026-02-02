@@ -15,7 +15,7 @@ public:
 	CrossSection(CrossSection&& other) = default;
 	CrossSection& operator=(CrossSection&& other) = default;
 
-	TH1D* GetHist();
+	TH1D* GetHist() const;
 	std::string GetLabel() const;
 
 	void SetLabel(std::string label);

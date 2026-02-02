@@ -18,7 +18,7 @@ CrossSection::CrossSection(std::string name)
 	label = name;
 }
 
-TH1D* CrossSection::GetHist()
+TH1D* CrossSection::GetHist() const
 {
 	return hist;
 }
