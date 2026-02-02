@@ -60,7 +60,7 @@ public:
 private:
 	static void AddCrossSectionToSelectedFolder(CrossSection& cs);
 	static void ResetAllCrossSectionIndeces();
-	static bool IsFolderInList(std::string& foldername);
+	static bool IsFolderInList(const std::string& foldername);
 
 	static void ShowSizeMismatchPopup();
 	static void ShowMissingDataPopup();

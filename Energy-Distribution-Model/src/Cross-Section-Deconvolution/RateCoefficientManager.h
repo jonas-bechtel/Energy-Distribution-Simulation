@@ -20,7 +20,7 @@ public:
 private:
 	static void AddRateCoefficientToSelectedFolder(RateCoefficient& cs);
 	static void ResetAllRateCoefficientIndeces();
-	static bool IsFolderInList(std::string& foldername);
+	static bool IsFolderInList(const std::string& foldername);
 
 	//static void ShowSizeMismatchPopup();
 	//static void ShowMissingDataPopup();

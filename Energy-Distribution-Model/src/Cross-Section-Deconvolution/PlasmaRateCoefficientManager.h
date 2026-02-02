@@ -18,7 +18,7 @@ public:
 
 private:
 	static void ResetAllPlasmaRateCoefficientIndeces();
-	static bool IsFolderInList(std::string& foldername);
+	static bool IsFolderInList(const std::string& foldername);
 
 	static void ShowLoadButtons();
 
