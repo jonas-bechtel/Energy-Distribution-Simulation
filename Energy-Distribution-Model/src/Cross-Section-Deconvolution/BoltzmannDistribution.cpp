@@ -48,7 +48,7 @@ namespace BoltzmannDistribution
 		ImPlot::PopStyleColor();
 	}
 
-	void ShowWindow(bool& show, CrossSection& currentCS)
+	void ShowWindow(bool& show, const CrossSection& currentCS)
 	{
 		if (!show)
 		{

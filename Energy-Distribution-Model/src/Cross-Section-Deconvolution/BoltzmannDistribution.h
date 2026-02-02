@@ -8,6 +8,6 @@ namespace BoltzmannDistribution
 	void Update(const CrossSection& currentCS);
 	void Plot(bool showMarkers);
 
-	void ShowWindow(bool& show, CrossSection& currentCS);
+	void ShowWindow(bool& show, const CrossSection& currentCS);
 }
 
