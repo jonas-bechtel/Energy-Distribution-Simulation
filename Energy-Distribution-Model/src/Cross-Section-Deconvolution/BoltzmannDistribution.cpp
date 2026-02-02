@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "BoltzmannDistribution.h"
 #include "Constants.h"
+#include "CrossSection.h"
 
 namespace BoltzmannDistribution
 {

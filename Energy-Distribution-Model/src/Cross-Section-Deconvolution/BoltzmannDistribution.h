@@ -1,5 +1,6 @@
 #pragma once
-#include "CrossSection.h"
+class CrossSection;
+
 namespace BoltzmannDistribution
 {
 	double Function(double energy, double temperature);

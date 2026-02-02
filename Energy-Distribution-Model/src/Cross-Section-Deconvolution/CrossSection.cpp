@@ -7,12 +7,15 @@
 #include "PlasmaRateCoefficient.h"
 #include "EnergyDistributionSet.h"
 #include "DeconvolutionWindow.h"
+#include "CrossSectionManager.h"
+#include "PlasmaRateCoefficientManager.h"
 
 #include "FileUtils.h"
+#include "ImGuiUtils.h"
 
-CrossSection::CrossSection()
+CrossSection::CrossSection(std::string name)
 {
-
+	label = name;
 }
 
 TH1D* CrossSection::GetHist()
@@ -358,12 +361,9 @@ void CrossSection::FillWithOneOverE(double scale)
 		energies.push_back(energy);
 		values.push_back(value);
 		valueArray.push_back(value);
+		errors.push_back(std::numeric_limits<double>::quiet_NaN());
 		hist->SetBinContent(i, value);
 	}
-	std::ostringstream oss;
-	oss << std::scientific << std::setprecision(2) << scale;
-	std::string scaleString = oss.str();
-	label = scaleString + std::string(" over E cs");
 }
 
 void CrossSection::Deconvolve(RateCoefficient& rc, EnergyDistributionSet& set, const FittingOptions& fitSettings, const CrossSectionBinningSettings& binSettings)
@@ -477,6 +477,11 @@ void CrossSection::Deconvolve(RateCoefficient& rc, EnergyDistributionSet& set, c
 
 void CrossSection::Plot(bool showMarkers, bool plotAsHist) const
 {
+	if (!IsPlotted())
+	{
+		return;
+	}
+
 	if (showMarkers) ImPlot::SetNextMarkerStyle(ImPlotMarker_Square);
 
 	if (plotAsHist)
@@ -492,6 +497,16 @@ void CrossSection::Plot(bool showMarkers, bool plotAsHist) const
 	
 }
 
+bool CrossSection::IsPlotted() const
+{
+	return plotted;
+}
+
+void CrossSection::SetPlotted(bool plot)
+{
+	plotted = plot;
+}
+
 void CrossSection::Clear()
 {
 	delete hist;
@@ -502,7 +517,7 @@ void CrossSection::Clear()
 	valueArray.clear();
 }
 
-void CrossSection::Load(std::filesystem::path& file)
+void CrossSection::Load(const std::filesystem::path& file)
 {
 	std::ifstream infile(file);
 
@@ -517,9 +532,6 @@ void CrossSection::Load(std::filesystem::path& file)
 
 	std::string line;
 
-
-	// skip first line
-	//std::getline(infile, line);
 	std::string header = FileUtils::GetHeaderFromFile(infile);
 
 	while (std::getline(infile, line))
@@ -564,10 +576,10 @@ void CrossSection::Load(std::filesystem::path& file)
 	}
 }
 
-void CrossSection::Save() const
+void CrossSection::Save(std::string foldername) const
 {
 	// set the output filepath
-	std::filesystem::path file = FileUtils::GetCrossSectionFolder() / (label + ".dat");
+	std::filesystem::path file = FileUtils::GetCrossSectionFolder() / foldername / (label + ".dat");
 
 	// Create the directories if they don't exist
 	if (!std::filesystem::exists(file.parent_path()))
@@ -593,60 +605,6 @@ void CrossSection::Save() const
 	outfile << binEdges.back();
 	
 	outfile.close();
-}
-
-void FittingOptions::ShowWindow(bool& show)
-{
-	if (!show)
-	{
-		return;
-	}
-	if (ImGui::Begin("Cross Section Fit settings", &show, ImGuiWindowFlags_NoDocking))
-	{
-		ImGui::Checkbox("ROOT fitting", &ROOT_fit);
-		ImGui::SameLine();
-		ImGui::Checkbox("SVD fitting", &SVD_fit);
-		ImGui::Checkbox("Eigen NNLS fitting", &EigenNNLS_fit);
-		ImGui::Checkbox("NNLS ROOT combo", &NNLS_ROOT_fit);
-		
-		ImGui::InputInt("iterations", &fit_iterations);
-		ImGui::InputInt("max iterations", &maxIterations);
-		ImGui::InputDouble("tolerance", &tolerance, 0.0, 0.0, "%.1e");
-		//ImGui::InputDouble("learning rate", &learningRate);
-		ImGui::Checkbox("fix params", &fixParameters);
-		ImGui::InputFloat2("fixed parameter range", fixedParameterRange, "%.4f");
-		ImGui::InputInt("error iterations", &errorIterations);
-	}
-	ImGui::End();
-}
-
-void CrossSectionBinningSettings::ShowWindow(bool& show)
-{
-	if (!show)
-	{
-		return;
-	}
-	if (ImGui::Begin("Cross Section Binning settings", &show, ImGuiWindowFlags_NoDocking))
-	{
-		ImGui::SetNextItemWidth(150.0f);
-		ImGui::Combo("binning options", (int*)&scheme, binningOptions, IM_ARRAYSIZE(binningOptions));
-		ImGui::PushItemWidth(100.0f);
-		ImGui::InputDouble("bin factor", &binFactor, 0.0, 0.0, "%.4f");
-		if (scheme == FactorBinning || scheme == PaperFactorMix)
-		{
-			ImGui::InputInt("number bins", &numberBins);
-		}
-		if (scheme == PaperFactorMix)
-		{
-			ImGui::InputDouble("boundary energy", &boundaryEnergy, 0.0, 0.0, "%.4f");
-		}
-		if (scheme == PaperBinning)
-		{
-			ImGui::InputInt("max ratio", &maxRatio);
-		}
-		ImGui::PopItemWidth();
-	}
-	ImGui::End();
 }
 
 
@@ -752,3 +710,112 @@ void CrossSectionBinningSettings::ShowWindow(bool& show)
 //
 //	FillFitPlots(parameterResult.data());
 //}
+
+CrossSectionFolder::CrossSectionFolder(std::string foldername)
+{
+	m_foldername = foldername;
+}
+
+void CrossSectionFolder::AddCrossSection(CrossSection& cs)
+{
+	m_crossSections.emplace_back(std::move(cs));
+	//currentCrossSectionIndex = crossSections.size() - 1;
+}
+
+void CrossSectionFolder::RemoveCrossSection(int index)
+{
+	m_crossSections.erase(m_crossSections.begin() + index);
+	m_currentCrossSectionIndex = std::min(m_currentCrossSectionIndex, (int)m_crossSections.size() - 1);
+}
+
+std::vector<CrossSection>& CrossSectionFolder::GetCrossSections()
+{
+	return m_crossSections;
+}
+
+void CrossSectionFolder::ShowSelectablesOfCrossSections()
+{
+	int j = 0;
+	ImGui::Indent(15.0f);
+	for (CrossSection& cs : m_crossSections)
+	{
+		ImGui::PushID(j);
+		bool selected = j == m_currentCrossSectionIndex;
+		if (cs.IsPlotted())
+		{
+			ImGui::Unindent(ImGui::GetTreeNodeToLabelSpacing());
+			ImGui::Bullet();
+			ImGui::SameLine();
+			ImGui::Indent(ImGui::GetTreeNodeToLabelSpacing());
+		}
+
+		if (ImGui::Selectable(cs.GetLabel().c_str(), selected, ImGuiSelectableFlags_AllowItemOverlap))
+		{
+			CrossSectionManager::ResetAllCrossSectionIndeces();
+			m_currentCrossSectionIndex = j;
+			CrossSectionManager::s_currentCrossSectionFolderIndex = -1;
+		}
+
+		if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+		{
+			cs.SetPlotted(!cs.IsPlotted());
+		}
+
+		ImGui::SameLine();
+		if (ImGui::SmallButton("-> plasma rate"))
+		{
+			PlasmaRateCoefficient prc("prc-" + cs.GetLabel());
+			prc.ConvolveFromErrorIterationArray(cs);
+			PlasmaRateCoefficientManager::AddPlasmaRateCoefficientToFolder(prc, m_foldername);
+		}
+		ImGui::SameLine();
+		if (ImGui::SmallButton("x"))
+		{
+			RemoveCrossSection(j);
+		}
+		ImGui::PopID();
+
+		j++;
+	}
+	ImGui::Unindent(15.0f);
+}
+
+void CrossSectionFolder::Load(const std::filesystem::path& folder)
+{
+	if (!std::filesystem::exists(folder) || !std::filesystem::is_directory(folder))
+	{
+		std::cerr << "Invalid directory path!" << std::endl;
+		return;
+	}
+
+	std::vector<std::filesystem::path> files;
+
+	for (const auto& entry : std::filesystem::directory_iterator(folder))
+	{
+		if (entry.is_regular_file() && entry.path().extension() == ".dat")
+		{
+			files.push_back(entry.path());
+		}
+	}
+
+	// Sort the paths (default < orders by lexicographical filename)
+	std::sort(files.begin(), files.end());
+
+	for (const auto& file : files)
+	{
+		CrossSection newCS(file.filename().string());
+		newCS.Load(file);
+		AddCrossSection(newCS);
+	}
+
+	// TODO maybe not necessary
+	m_foldername = folder.filename().string();
+}
+
+void CrossSectionFolder::SetAllPlotted(bool plot)
+{
+	for (CrossSection& cs : m_crossSections)
+	{
+		cs.SetPlotted(plot);
+	}
+}

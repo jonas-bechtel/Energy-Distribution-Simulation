@@ -3,47 +3,13 @@
 class EnergyDistributionSet;
 class EnergyDistribution;
 class RateCoefficient;
-
-enum CrossSectionBinningScheme { PaperBinning, FactorBinning, PaperFactorMix };
-
-struct CrossSectionBinningSettings
-{
-	const char* binningOptions[3] = { "paper binning", "factor binning", "paper/factor mix" };
-
-	int numberBins = 7;
-	int maxRatio = 10;
-	double boundaryEnergy = 0.1;
-	double binFactor = 1.5;
-
-	CrossSectionBinningScheme scheme = CrossSectionBinningScheme::PaperFactorMix;
-
-	void ShowWindow(bool& show);
-};
-
-struct FittingOptions
-{
-	// fit options
-	bool ROOT_fit = true;
-	bool SVD_fit = false;
-	bool EigenNNLS_fit = false;
-	bool NNLS_ROOT_fit = false;
-
-	int errorIterations = 1; // number of iterations to calculate errors
-	int fit_iterations = 1;
-	int maxIterations = 1000;
-	double tolerance = 1e-6;
-	double learningRate = 1;
-	bool fixParameters = false;
-	float fixedParameterRange[2] = { 1,100 };
-
-	void ShowWindow(bool& show);
-};
-
+class CrossSectionBinningSettings;
+class FittingOptions;
 
 class CrossSection
 {
 public:
-	CrossSection();
+	CrossSection(std::string name);
 	CrossSection(const CrossSection& other) = delete;
 	CrossSection& operator=(const CrossSection& other) = delete;
 	CrossSection(CrossSection&& other) = default;
@@ -59,10 +25,12 @@ public:
 	void Deconvolve(RateCoefficient& rc, EnergyDistributionSet& set, const FittingOptions& fitSettings, const CrossSectionBinningSettings& binSettings);
 
 	void Plot(bool showMarkers, bool plotAsHist) const;
+	bool IsPlotted() const;
+	void SetPlotted(bool plot);
 
 	void Clear();
-	void Save() const;
-	void Load(std::filesystem::path& filename);
+	void Save(std::string foldername) const;
+	void Load(const std::filesystem::path& filename);
 
 private:
 	double ConvolveFit(double Ed, double* csBins, const EnergyDistributionSet& set,
@@ -85,6 +53,8 @@ private:
 	// array with values from error iterations
 	std::vector<double> valueArray;
 
+	bool plotted = false;
+
 	// labelling things
 	std::string label = "cs";
 	std::filesystem::path energyDistriubtionSetFolder;
@@ -94,3 +64,33 @@ private:
 	friend class PlasmaRateCoefficient ;
 };
 
+class CrossSectionFolder
+{
+public:
+	CrossSectionFolder(std::string foldername);
+	CrossSectionFolder(const CrossSectionFolder& other) = delete;
+	CrossSectionFolder& operator=(const CrossSectionFolder& other) = delete;
+
+	CrossSectionFolder(CrossSectionFolder&& other) = default;
+	CrossSectionFolder& operator=(CrossSectionFolder&& other) = default;
+
+	void AddCrossSection(CrossSection& cs);
+	void RemoveCrossSection(int index);
+	std::vector<CrossSection>& GetCrossSections();
+
+	std::string GetName() { return m_foldername; }
+
+	void ShowSelectablesOfCrossSections();
+
+	void Load(const std::filesystem::path& folder);
+
+private:
+	void SetAllPlotted(bool plot);
+
+private:
+	std::vector<CrossSection> m_crossSections;
+	int m_currentCrossSectionIndex = -1;
+	std::string m_foldername;
+
+	friend class CrossSectionManager;
+};

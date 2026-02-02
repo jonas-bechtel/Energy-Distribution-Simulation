@@ -267,6 +267,7 @@ namespace EnergyDistributionWindow
 		ImGuiChildFlags flags = ImGuiChildFlags_Border | ImGuiChildFlags_ResizeX | ImGuiChildFlags_ResizeY;
 		if (ImGui::BeginChild("listbox", ImVec2(400.0f, -1), flags))
 		{
+			// TODO put into colour file or something
 			ImGui::PushStyleColor(ImGuiCol_TabActive, ImVec4(0.7f, 0.15f, 0.15f, 1.0f));
 			ImGui::PushStyleColor(ImGuiCol_TabHovered, ImVec4(0.8f, 0.2f, 0.2f, 1.0f));
 			if (ImGui::BeginTabBar("##tab bar", ImGuiTabBarFlags_AutoSelectNewTabs))
@@ -641,7 +642,7 @@ namespace EnergyDistributionWindow
 		if (ImGui::BeginChild("energy distribution sets", ImVec2(100, 100), flags))
 		{
 			ImGui::Text("energy distribution sets");
-			if (ImGui::BeginListBox("##setlist", ImVec2(-1, 150)))
+			if (ImGui::BeginListBox("##setlist", ImVec2(-1, 100)))
 			{
 				for (int i = 0; i < setList.size(); i++)
 				{

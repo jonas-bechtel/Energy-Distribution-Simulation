@@ -1,12 +1,14 @@
 #include "pch.h"
 #include "RateCoefficient.h"
+#include "RateCoefficientManager.h"
 #include "EnergyDistributionSet.h"
 #include "CrossSection.h"
 
 #include "FileUtils.h"
 
-RateCoefficient::RateCoefficient()
+RateCoefficient::RateCoefficient(std::string name)
 {
+	label = name;
 }
 
 int RateCoefficient::GetIndexOfDetuningEnergy(double Ed) const
@@ -45,11 +47,6 @@ void RateCoefficient::ResetGraphValues()
 	{
 		graph->SetPointY(i, value.at(i));
 	}
-}
-
-void RateCoefficient::SetLabel(std::string label)
-{
-	this->label = label;
 }
 
 std::string RateCoefficient::GetLabel()
@@ -101,6 +98,8 @@ void RateCoefficient::Convolve(const CrossSection& cs, EnergyDistributionSet& se
 
 void RateCoefficient::Plot(bool showMarkers) const
 {
+	if (!IsPlotted()) return;
+
 	if (showMarkers) ImPlot::SetNextMarkerStyle(ImPlotMarker_Square);
 	ImPlot::PlotLine(label.c_str(), detuningEnergies.data(), value.data(), value.size());
 	ImPlot::PlotErrorBars(label.c_str(), detuningEnergies.data(), value.data(), error.data(), error.size());
@@ -180,10 +179,10 @@ void RateCoefficient::Load(const std::filesystem::path& filename)
 	label = filename.filename().string();
 }
 
-void RateCoefficient::Save() const
+void RateCoefficient::Save(std::string foldername) const
 {
 	// set the output filepath
-	std::filesystem::path file = FileUtils::GetRateCoefficientFolder() / (label + ".dat");
+	std::filesystem::path file = FileUtils::GetRateCoefficientFolder() / foldername / (label + ".dat");
 
 	// Create the directories if they don't exist
 	if (!std::filesystem::exists(file.parent_path()))
@@ -239,4 +238,103 @@ void RateCoefficient::SortValuesByDetuningEnergy()
 	error = std::move(sortedError);
 }
 
+RateCoefficientFolder::RateCoefficientFolder(std::string foldername)
+{
+	m_foldername = foldername;
+}
 
+void RateCoefficientFolder::AddRateCoefficient(RateCoefficient& rc)
+{
+	m_rateCoefficients.emplace_back(std::move(rc));
+}
+
+void RateCoefficientFolder::RemoveRateCoefficient(int index)
+{
+	m_rateCoefficients.erase(m_rateCoefficients.begin() + index);
+	m_currentRateCoefficientIndex = std::min(m_currentRateCoefficientIndex, (int)m_rateCoefficients.size() - 1);
+}
+
+std::vector<RateCoefficient>& RateCoefficientFolder::GetRateCoefficients()
+{
+	return m_rateCoefficients;
+}
+
+void RateCoefficientFolder::ShowSelectablesOfRateCoefficients()
+{
+	int j = 0;
+	ImGui::Indent(15.0f);
+	for (RateCoefficient& rc : m_rateCoefficients)
+	{
+		ImGui::PushID(j);
+		bool selected = j == m_currentRateCoefficientIndex;
+		if (rc.IsPlotted())
+		{
+			ImGui::Unindent(ImGui::GetTreeNodeToLabelSpacing());
+			ImGui::Bullet();
+			ImGui::SameLine();
+			ImGui::Indent(ImGui::GetTreeNodeToLabelSpacing());
+		}
+
+		if (ImGui::Selectable(rc.GetLabel().c_str(), selected, ImGuiSelectableFlags_AllowItemOverlap))
+		{
+			RateCoefficientManager::ResetAllRateCoefficientIndeces();
+			m_currentRateCoefficientIndex = j;
+			RateCoefficientManager::s_currentRateCoefficientFolderIndex = -1;
+		}
+
+		if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+		{
+			rc.SetPlotted(!rc.IsPlotted());
+		}
+
+		ImGui::SameLine();
+		if (ImGui::SmallButton("x"))
+		{
+			RemoveRateCoefficient(j);
+		}
+		ImGui::PopID();
+
+		j++;
+	}
+	ImGui::Unindent(15.0f);
+}
+
+void RateCoefficientFolder::Load(const std::filesystem::path& folder)
+{
+	if (!std::filesystem::exists(folder) || !std::filesystem::is_directory(folder))
+	{
+		std::cerr << "Invalid directory path!" << std::endl;
+		return;
+	}
+
+	std::vector<std::filesystem::path> files;
+
+	for (const auto& entry : std::filesystem::directory_iterator(folder))
+	{
+		if (entry.is_regular_file() && entry.path().extension() == ".dat")
+		{
+			files.push_back(entry.path());
+		}
+	}
+
+	// Sort the paths (default < orders by lexicographical filename)
+	std::sort(files.begin(), files.end());
+
+	for (const auto& file : files)
+	{
+		RateCoefficient newRC(file.filename().string());
+		newRC.Load(file);
+		AddRateCoefficient(newRC);
+	}
+
+	// TODO maybe not necessary
+	m_foldername = folder.filename().string();
+}
+
+void RateCoefficientFolder::SetAllPlotted(bool plot)
+{
+	for (RateCoefficient& rc : m_rateCoefficients)
+	{
+		rc.SetPlotted(plot);
+	}
+}

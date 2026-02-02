@@ -4,25 +4,18 @@
 #include "BoltzmannDistribution.h"
 #include "EnergyDistributionSet.h"
 #include "EnergyDistributionWindow.h"
+#include "CrossSectionManager.h"
+#include "RateCoefficientManager.h"
+#include "RateCoefficient.h"
+#include "PlasmaRateCoefficient.h"
+#include "PlasmaRateCoefficientManager.h"
+#include "CrossSection.h"
 
 #include "FileUtils.h"
-#include "Eigen/SVD"
 #include <Constants.h>
-#include <ImGuiUtils.h>
 
 namespace DeconvolutionWindow
 {
-	// main data
-	static std::vector<CrossSection> crossSectionList;
-	static std::vector<RateCoefficient> rateCoefficientList;
-	static std::vector<PlasmaRateCoefficient> plasmaRateCoefficientList;
-	static int currentCrossSectionIndex;
-	static int currentRateCoefficientIndex;
-	static int currentPlasmaRateCoefficientIndex;
-
-	static CrossSectionBinningSettings binSettings;
-	static FittingOptions fitSettings;
-
 	// plot parameters
 	static bool logX = true;
 	static bool logY = true;
@@ -31,95 +24,20 @@ namespace DeconvolutionWindow
 	static bool showSubfunctions = false;
 	 
 	static bool showBoltzmannConvolutionWindow = false;
-	static bool showBinningSettingsWindow = false;
-	static bool showFitSettingsWindow = false;
+	
 	static bool showPlasmaRateWindow = false;
-	 
-	static char CSnameInput[64] = "cross section name";
-	static char RCnameInput[64] = "rate coefficient name";
-
-	// scale for 1/E cs
-	static double scale = 1.0;
-
-	static const ImVec4 inputTextColor = ImVec4(0.6f, 0.2f, 0.1f, 1.0f);
-
+	
 	void Init()
 	{
-		BoltzmannDistribution::Update(GetCurrentCS());
+		BoltzmannDistribution::Update(CrossSection("bla"));
+
+		CrossSectionManager::AddCrossSectionFolder(CrossSectionFolder("test"));
+		RateCoefficientManager::AddRateCoefficientFolder(RateCoefficientFolder("measured rcs"));
 
 		// temp: load default rate coefficient
-		RateCoefficient rc;
-		rc.Load(FileUtils::GetMeasuredRateCoefficientFolder() / "amb-Ed_IeXXX_t0.5-14.0_pN0gt0_c00 - reversed.dat");
-
-		AddRateCoefficientToList(rc);
-	}
-
-	void AddRateCoefficientToList(RateCoefficient& rc)
-	{
-		rateCoefficientList.emplace_back(std::move(rc));
-		if(rateCoefficientList.size() == 1)
-			currentRateCoefficientIndex = 0;
-	}
-
-	void RemoveRateCoefficient(int index)
-	{
-		rateCoefficientList.erase(rateCoefficientList.begin() + index);
-		currentRateCoefficientIndex = std::min(currentRateCoefficientIndex, (int)rateCoefficientList.size() - 1);
-	}
-
-	void AddCrossSectionToList(CrossSection& cs)
-	{
-		crossSectionList.emplace_back(std::move(cs));
-		currentCrossSectionIndex = crossSectionList.size() - 1;
-	}
-
-	void RemoveCrossSection(int index)
-	{
-		crossSectionList.erase(crossSectionList.begin() + index);
-		currentCrossSectionIndex = std::min(currentCrossSectionIndex, (int)crossSectionList.size() - 1);
-	}
-
-	void AddPlasmaRateToList(PlasmaRateCoefficient& prc)
-	{
-		plasmaRateCoefficientList.emplace_back(std::move(prc));
-		currentPlasmaRateCoefficientIndex = plasmaRateCoefficientList.size() - 1;
-	}
-
-	void RemovePlasmaRate(int index)
-	{
-		plasmaRateCoefficientList.erase(plasmaRateCoefficientList.begin() + index);
-		currentPlasmaRateCoefficientIndex = std::min(currentPlasmaRateCoefficientIndex, (int)plasmaRateCoefficientList.size() - 1);
-
-	}
-
-	RateCoefficient& GetCurrentRC()
-	{
-		static RateCoefficient dummy;
-		if (rateCoefficientList.empty())
-		{
-			return dummy;
-		}
-		return rateCoefficientList.at(currentRateCoefficientIndex);
-	}
-
-	CrossSection& GetCurrentCS()
-	{
-		static CrossSection dummy;
-		if (crossSectionList.empty())
-		{
-			return dummy;
-		}
-		return crossSectionList.at(currentCrossSectionIndex);
-	}
-
-	PlasmaRateCoefficient& GetCurrentPRC()
-	{
-		static PlasmaRateCoefficient dummy;
-		if (plasmaRateCoefficientList.empty())
-		{
-			return dummy;
-		}
-		return plasmaRateCoefficientList.at(currentPlasmaRateCoefficientIndex);
+		RateCoefficient rc("mbrc");
+		rc.Load(FileUtils::GetMeasuredRateCoefficientFolder() / "amb-Ed_IeXXX_t0.5-14.0_pN0gt0_c00.dat");
+		RateCoefficientManager::GetFolders().at(0).AddRateCoefficient(rc);
 	}
 
 	void ShowWindow()
@@ -128,9 +46,9 @@ namespace DeconvolutionWindow
 		{
 			ImGui::BeginGroup();
 			EnergyDistributionWindow::ShowSetList();
-			ShowRateCoefficientList();
-			ShowCrossSectionList();
-			ShowPlasmaRateList();
+			RateCoefficientManager::ShowFolderList();
+			CrossSectionManager::ShowFolderList();
+			PlasmaRateCoefficientManager::ShowFolderList();
 			ImGui::EndGroup();
 
 			ImGui::SameLine();
@@ -140,11 +58,10 @@ namespace DeconvolutionWindow
 			ShowPlots();
 			ImGui::EndGroup();
 			
-			CrossSection& currentCrosssection = GetCurrentCS();
-			BoltzmannDistribution::ShowWindow(showBoltzmannConvolutionWindow, currentCrosssection);
+			//CrossSection& currentCrosssection = GetCurrentCS();
+			BoltzmannDistribution::ShowWindow(showBoltzmannConvolutionWindow, CrossSection("bla"));
 
-			binSettings.ShowWindow(showBinningSettingsWindow);
-			fitSettings.ShowWindow(showFitSettingsWindow);
+			CrossSectionManager::ShowFittinAndBinningSettings();
 
 			ShowPlasmaRateWindow();
 		}
@@ -153,57 +70,26 @@ namespace DeconvolutionWindow
 
 	void ShowSettings()
 	{
-		std::vector<EnergyDistributionSet>& setList = EnergyDistributionWindow::GetSetList();
-		int currentSetIndex = EnergyDistributionWindow::GetCurrentSetIndex();
-
 		ImGuiChildFlags flags = ImGuiChildFlags_Border | ImGuiChildFlags_ResizeX | ImGuiChildFlags_ResizeY;
-		if (ImGui::BeginChild("DeconvolveSettings", ImVec2(100.0f, 0.0f), flags))
+		if (ImGui::BeginChild("(De)convolveSettings", ImVec2(100.0f, 0.0f), flags))
 		{
-			ImGui::Text("energy distribution set: "); ImGui::SameLine();
-			ImGui::TextColored(inputTextColor, "%s", EnergyDistributionWindow::GetCurrentSet().GetLabel().c_str());
-
-			ImGui::Text("target rate coefficient: "); ImGui::SameLine();
-			ImGui::TextColored(inputTextColor, "%s", GetCurrentRC().GetLabel().c_str());
-
-			ImGui::Checkbox("show binning settings", &showBinningSettingsWindow);
-			ImGui::SameLine();
-			ImGui::Checkbox("show Fit settings", &showFitSettingsWindow);
-
-			ImGui::SetNextItemWidth(150.0f);
-			ImGui::InputText("output CS name", CSnameInput, sizeof(CSnameInput));
-
-			if (ImGui::Button("Deconvolve Cross Section"))
+			if (ImGui::BeginTabBar("controls"))
 			{
-				OnDeconvolveButtonClicked();
+				if (ImGui::BeginTabItem("Deconvolution"))
+				{
+					CrossSectionManager::ShowDeconvolutionControls();
+					ImGui::EndTabItem();
+				}
+
+				if (ImGui::BeginTabItem("Convolution"))
+				{
+					RateCoefficientManager::ShowConvolutionControls();
+					ImGui::EndTabItem();
+				}
+				ImGui::EndTabBar();
 			}
-			
-			ShowSizeMismatchPopup();
-			ShowMissingDataPopup();	
 		}
 		ImGui::EndChild();
-		
-		
-		ImGui::SameLine();
-		if (ImGui::BeginChild("ConvolveSettings", ImVec2(100.0f, 0.0f), flags))
-		{
-			ImGui::Text("energy distribution set: "); ImGui::SameLine();
-			ImGui::TextColored(inputTextColor, "%s", EnergyDistributionWindow::GetCurrentSet().GetLabel().c_str());
-
-			ImGui::Text("cross section: "); ImGui::SameLine();
-			ImGui::TextColored(inputTextColor, "%s", GetCurrentCS().GetLabel().c_str());
-
-			ImGui::SetNextItemWidth(150.0f);
-			ImGui::InputText("output RC name", RCnameInput, sizeof(RCnameInput));
-
-			if (ImGui::Button("Convolve Rate Coefficient"))
-			{
-				OnConvolveButtonClicked();
-			}
-
-			ShowMissingDataPopup();
-		}
-		ImGui::EndChild();
-
 	}
 
 	void ShowPlots()
@@ -217,17 +103,19 @@ namespace DeconvolutionWindow
 			ImPlot::SetupLegend(ImPlotLocation_NorthEast);
 
 			int i = 0;
-			for (const RateCoefficient& rc : rateCoefficientList)
+			for (RateCoefficientFolder& folder : RateCoefficientManager::GetFolders())
 			{
-				ImGui::PushID(i++);
-				if (showSubfunctions)
+				for (const RateCoefficient& rc : folder.GetRateCoefficients())
 				{
-					rc.PlotSubfunctions();
+					ImGui::PushID(i++);
+					if (showSubfunctions)
+					{
+						rc.PlotSubfunctions();
+					}
+					rc.Plot(showMarkers);
+					ImGui::PopID();
 				}
-				rc.Plot(showMarkers);
-				ImGui::PopID();
 			}
-
 			ImPlot::EndPlot();
 		}
 
@@ -253,11 +141,14 @@ namespace DeconvolutionWindow
 			if (logY) ImPlot::SetupAxisScale(ImAxis_Y1, ImPlotScale_Log10);
 			ImPlot::SetupLegend(ImPlotLocation_NorthEast);
 			int i = 0;
-			for (const CrossSection& cs : crossSectionList)
+			for (CrossSectionFolder& folder : CrossSectionManager::GetFolders())
 			{
-				ImGui::PushID(i++);
-				cs.Plot(showMarkers, plotAsHist);
-				ImGui::PopID();
+				for (const CrossSection& cs : folder.GetCrossSections())
+				{
+					ImGui::PushID(i++);
+					cs.Plot(showMarkers, plotAsHist);
+					ImGui::PopID();
+				}
 			}
 
 			if (showBoltzmannConvolutionWindow)
@@ -285,12 +176,16 @@ namespace DeconvolutionWindow
 				if (logY) ImPlot::SetupAxisScale(ImAxis_Y1, ImPlotScale_Log10);
 				ImPlot::SetupLegend(ImPlotLocation_NorthEast);
 				int i = 0;
-				for (const PlasmaRateCoefficient& prc : plasmaRateCoefficientList)
+				for (PlasmaRateCoefficientFolder& folder : PlasmaRateCoefficientManager::GetFolders())
 				{
-					ImGui::PushID(i++);
-					prc.Plot(showMarkers);
-					ImGui::PopID();
+					for (const PlasmaRateCoefficient& prc : folder.GetPlasmaRateCoefficients())
+					{
+						ImGui::PushID(i++);
+						prc.Plot(showMarkers);
+						ImGui::PopID();
+					}
 				}
+				
 
 				ImPlot::EndPlot();
 			}
@@ -298,251 +193,6 @@ namespace DeconvolutionWindow
 			PlasmaRateCoefficient::ShowConvolutionParamterInputs();
 		}
 		ImGui::End();
-	}
-
-	void OnDeconvolveButtonClicked()
-	{
-		std::vector<EnergyDistributionSet>& setList = EnergyDistributionWindow::GetSetList();
-
-		if (setList.empty() || rateCoefficientList.empty())
-		{
-			ImGui::OpenPopup("missing data");
-			std::cout << "no energy distribution set or rate coefficient selected\n";
-			return;
-		}
-		
-		EnergyDistributionSet& currentSet = EnergyDistributionWindow::GetCurrentSet();
-		RateCoefficient& currentRC = GetCurrentRC();
-
-		if (currentRC.GetSize() != currentSet.GetSize())
-		{
-			ImGui::OpenPopup("size mismatch");
-			std::cout << "sizes of rate coefficients and energy distributions dont match: " +
-				std::to_string(currentRC.GetSize()) + " != " + std::to_string(currentSet.GetSize()) << std::endl;
-			return;
-		}
-		
-		CrossSection cs;
-		cs.SetLabel(CSnameInput);
-		cs.Deconvolve(currentRC, currentSet, fitSettings, binSettings);
-		cs.Save();
-		AddCrossSectionToList(cs);
-	}
-
-	void OnConvolveButtonClicked()
-	{
-		std::vector<EnergyDistributionSet>& setList = EnergyDistributionWindow::GetSetList();
-
-		if (setList.empty() || crossSectionList.empty())
-		{
-			ImGui::OpenPopup("missing data");
-			std::cout << "no energy distribution set or cross section selected\n";
-			return;
-		}
-		
-		EnergyDistributionSet& currentSet = EnergyDistributionWindow::GetCurrentSet();
-		CrossSection& currentCS = GetCurrentCS();
-
-		RateCoefficient rc;
-		rc.Convolve(currentCS, currentSet);
-		rc.SetLabel(RCnameInput);
-		rc.Save();
-		AddRateCoefficientToList(rc);
-	}
-
-	void ShowSizeMismatchPopup()
-	{
-		EnergyDistributionSet& currentSet = EnergyDistributionWindow::GetCurrentSet();
-		RateCoefficient& currentRC = GetCurrentRC();
-
-		ImGuiUtils::ErrorPopup("size mismatch",
-			"Sizes of Rate Coefficients and Energy Distributions dont match:\n"
-			"Rate Coefficients:\t\t" + std::to_string(currentRC.GetSize()) +
-			"\nEnergy distributions:\t" + std::to_string(currentSet.GetSize()));
-	}
-
-	void ShowMissingDataPopup()
-	{
-		ImGuiUtils::ErrorPopup("missing data",
-			"no energy distribution set, rate coefficient\n"
-			"or cross section was selected");
-	}
-
-	void ShowRateCoefficientList()
-	{
-		ImGuiChildFlags flags = ImGuiChildFlags_Border | ImGuiChildFlags_ResizeX | ImGuiChildFlags_ResizeY;
-		if (ImGui::BeginChild("merged beam rate coefficients", ImVec2(100, 100), flags))
-		{
-			ImGui::Text("rate coefficients");
-			if (ImGui::BeginListBox("##mbrclist", ImVec2(-1, 150)))
-			{
-				for (int i = 0; i < rateCoefficientList.size(); i++)
-				{
-					RateCoefficient& rc = rateCoefficientList.at(i);
-
-					ImGui::PushID(i);
-					bool selected = i == currentRateCoefficientIndex;
-					if (ImGui::Selectable(rc.GetLabel().c_str(), selected, ImGuiSelectableFlags_AllowItemOverlap))
-					{
-						currentRateCoefficientIndex = i;
-					}
-					ImGui::SameLine();
-					if (ImGui::SmallButton("x"))
-					{
-						RemoveRateCoefficient(i);
-					}
-					ImGui::PopID();
-
-				}
-				ImGui::EndListBox();
-			}
-			if (ImGui::Button("load measured rc"))
-			{
-				std::filesystem::path file = FileUtils::SelectFile(FileUtils::GetMeasuredRateCoefficientFolder(), {"*.dat"});
-				if (!file.empty())
-				{
-					RateCoefficient rc;
-					rc.Load(file);
-					
-					AddRateCoefficientToList(rc);
-				}
-			}
-			ImGui::SameLine();
-			if (ImGui::Button("load fitted rc"))
-			{
-				std::vector<std::filesystem::path> files = FileUtils::SelectFiles(FileUtils::GetRateCoefficientFolder(), {"*.dat"});
-				for (std::filesystem::path& file : files)
-				{
-					RateCoefficient rc;
-					rc.Load(file);
-					AddRateCoefficientToList(rc);
-				}
-			}
-		}
-		ImGui::EndChild();
-	}
-
-	void ShowCrossSectionList()
-	{
-		ImGuiChildFlags flags = ImGuiChildFlags_Border | ImGuiChildFlags_ResizeX | ImGuiChildFlags_ResizeY;
-		if (ImGui::BeginChild("cross sections", ImVec2(100, 100), flags))
-		{
-			ImGui::Text("cross sections");
-			if (ImGui::BeginListBox("##cslist", ImVec2(-1, 150)))
-			{
-				for (int i = 0; i < crossSectionList.size(); i++)
-				{
-					CrossSection& cs = crossSectionList.at(i);
-
-					ImGui::PushID(i);
-					bool selected = i == currentCrossSectionIndex;
-					if (ImGui::Selectable(cs.GetLabel().c_str(), selected, ImGuiSelectableFlags_AllowItemOverlap))
-					{
-						currentCrossSectionIndex = i;
-					}
-					ImGui::SameLine();
-					if (ImGui::SmallButton("-> plasma rate"))
-					{
-						PlasmaRateCoefficient prc;
-						prc.ConvolveFromErrorIterationArray(cs);
-						prc.Save();
-						AddPlasmaRateToList(prc);
-					}
-					ImGui::SameLine();
-					if (ImGui::SmallButton("x"))
-					{
-						RemoveCrossSection(i);
-					}
-					ImGui::PopID();
-
-				}
-				ImGui::EndListBox();
-			}
-			if (ImGui::Button("load fitted cs"))
-			{
-				std::vector<std::filesystem::path> files = FileUtils::SelectFiles(FileUtils::GetCrossSectionFolder(), { "*.dat" });
-				for (std::filesystem::path& file : files)
-				{
-					CrossSection cs;
-					cs.Load(file);
-					cs.SetLabel(file.filename().string());
-					AddCrossSectionToList(cs);
-				}
-			}
-			ImGui::SameLine();
-			if (ImGui::Button("show initial guess"))
-			{
-				if(!rateCoefficientList.empty())
-				{
-					CrossSection cs;
-					cs.SetupBinning(binSettings, rateCoefficientList.at(currentRateCoefficientIndex));
-					cs.SetInitialGuessValues(rateCoefficientList.at(currentRateCoefficientIndex));
-					cs.SetLabel("initial guess");
-					AddCrossSectionToList(cs);
-				}
-				else
-				{
-					ImGui::OpenPopup("missing data");
-					std::cout << "no rate coefficient selected\n";
-				}
-			}
-			if (ImGui::Button("create 1/E cs"))
-			{
-				CrossSection cs;
-				cs.FillWithOneOverE(scale);
-				AddCrossSectionToList(cs);
-			}
-			ImGui::SameLine();
-			ImGui::SetNextItemWidth(100.0f);
-			ImGui::InputDouble("scale", &scale, 0, 0, "%.2e");
-
-			ShowMissingDataPopup();
-		}
-		ImGui::EndChild();
-	}
-
-	void ShowPlasmaRateList()
-	{
-		ImGuiChildFlags flags = ImGuiChildFlags_Border | ImGuiChildFlags_ResizeX | ImGuiChildFlags_ResizeY;
-		if (ImGui::BeginChild("plasma rate coefficients", ImVec2(100, 100), flags))
-		{
-			ImGui::Text("plasma rate coefficients");
-			if (ImGui::BeginListBox("##plasmaRatelist", ImVec2(-1, 150)))
-			{
-				for (int i = 0; i < plasmaRateCoefficientList.size(); i++)
-				{
-					PlasmaRateCoefficient& prc = plasmaRateCoefficientList.at(i);
-
-					ImGui::PushID(i);
-					bool selected = i == currentPlasmaRateCoefficientIndex;
-					if (ImGui::Selectable(prc.GetLabel().c_str(), selected, ImGuiSelectableFlags_AllowItemOverlap))
-					{
-						currentPlasmaRateCoefficientIndex = i;
-					}
-
-					ImGui::SameLine();
-					if (ImGui::SmallButton("x"))
-					{
-						RemovePlasmaRate(i);
-					}
-					ImGui::PopID();
-
-				}
-				ImGui::EndListBox();
-			}
-			if (ImGui::Button("load fitted plasma rate"))
-			{
-				std::vector<std::filesystem::path> files = FileUtils::SelectFiles(FileUtils::GetPlasmaRateFolder(), { "*.dat" });
-				for (std::filesystem::path& file : files)
-				{
-					PlasmaRateCoefficient prc;
-					prc.Load(file);
-					prc.SetLabel(file.filename().string());
-					AddPlasmaRateToList(prc);
-				}
-			}
-		}
-		ImGui::EndChild();
 	}
 }
 

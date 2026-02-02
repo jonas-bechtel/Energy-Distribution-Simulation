@@ -1,19 +1,21 @@
 #include "pch.h"
 #include "PlasmaRateCoefficient.h"
+#include "PlasmaRateCoefficientManager.h"
 #include "Constants.h"
 #include "BoltzmannDistribution.h"
+#include "CrossSection.h"
 
 #include "FileUtils.h"
+
+PlasmaRateCoefficient::PlasmaRateCoefficient(std::string name)
+{
+	label = name;
+}
 
 std::string PlasmaRateCoefficient::GetLabel()
 {
 	
 	return label;
-}
-
-void PlasmaRateCoefficient::SetLabel(std::string label)
-{
-	this->label = label;
 }
 
 void PlasmaRateCoefficient::Convolve(const CrossSection& cs)
@@ -125,6 +127,11 @@ void PlasmaRateCoefficient::ConvolveFromErrorIterationArray(const CrossSection& 
 
 void PlasmaRateCoefficient::Plot(bool showMarkers) const
 {
+	if (!IsPlotted())
+	{
+		return;
+	}
+
 	if (showMarkers) ImPlot::SetNextMarkerStyle(ImPlotMarker_Square);
 	ImPlot::PlotLine(label.c_str(), temperatures.data(), values.data(), values.size());
 	ImPlot::PlotErrorBars(label.c_str(), temperatures.data(), values.data(), errors.data(), errors.size());
@@ -164,10 +171,10 @@ void PlasmaRateCoefficient::ShowConvolutionParamterInputs()
 	ImGui::PopItemWidth();
 }
 
-void PlasmaRateCoefficient::Save() const
+void PlasmaRateCoefficient::Save(std::string foldername) const
 {
 	// set the output filepath
-	std::filesystem::path filepath = FileUtils::GetPlasmaRateFolder() / (label + ".dat");
+	std::filesystem::path filepath = FileUtils::GetPlasmaRateFolder() / foldername / (label + ".dat");
 
 	// Create the directories if they don't exist
 	if (!std::filesystem::exists(filepath.parent_path()))
@@ -191,4 +198,105 @@ void PlasmaRateCoefficient::Save() const
 	}
 
 	outfile.close();
+}
+
+PlasmaRateCoefficientFolder::PlasmaRateCoefficientFolder(std::string foldername)
+{
+	m_foldername = foldername;
+}
+
+void PlasmaRateCoefficientFolder::AddPlasmaRateCoefficient(PlasmaRateCoefficient& prc)
+{
+	m_plasmaRateCoefficients.emplace_back(std::move(prc));
+}
+
+void PlasmaRateCoefficientFolder::RemovePlasmaRateCoefficient(int index)
+{
+	m_plasmaRateCoefficients.erase(m_plasmaRateCoefficients.begin() + index);
+	m_currentPlasmaRateCoefficientIndex = std::min(m_currentPlasmaRateCoefficientIndex, (int)m_plasmaRateCoefficients.size() - 1);
+}
+
+std::vector<PlasmaRateCoefficient>& PlasmaRateCoefficientFolder::GetPlasmaRateCoefficients()
+{
+	return m_plasmaRateCoefficients;
+}
+
+void PlasmaRateCoefficientFolder::ShowSelectablesOfPlasmaRateCoefficients()
+{
+	int j = 0;
+	ImGui::Indent(15.0f);
+	for (PlasmaRateCoefficient& prc : m_plasmaRateCoefficients)
+	{
+		ImGui::PushID(j);
+		bool selected = j == m_currentPlasmaRateCoefficientIndex;
+		if (prc.IsPlotted())
+		{
+			ImGui::Unindent(ImGui::GetTreeNodeToLabelSpacing());
+			ImGui::Bullet();
+			ImGui::SameLine();
+			ImGui::Indent(ImGui::GetTreeNodeToLabelSpacing());
+		}
+
+		if (ImGui::Selectable(prc.GetLabel().c_str(), selected, ImGuiSelectableFlags_AllowItemOverlap))
+		{
+			PlasmaRateCoefficientManager::ResetAllPlasmaRateCoefficientIndeces();
+			m_currentPlasmaRateCoefficientIndex = j;
+			PlasmaRateCoefficientManager::s_currentPlasmaRateCoefficientFolderIndex = -1;
+		}
+
+		if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+		{
+			prc.SetPlotted(!prc.IsPlotted());
+		}
+
+		ImGui::SameLine();
+		if (ImGui::SmallButton("x"))
+		{
+			RemovePlasmaRateCoefficient(j);
+		}
+		ImGui::PopID();
+
+		j++;
+	}
+	ImGui::Unindent(15.0f);
+}
+
+void PlasmaRateCoefficientFolder::Load(const std::filesystem::path& folder)
+{
+	if (!std::filesystem::exists(folder) || !std::filesystem::is_directory(folder))
+	{
+		std::cerr << "Invalid directory path!" << std::endl;
+		return;
+	}
+
+	std::vector<std::filesystem::path> files;
+
+	for (const auto& entry : std::filesystem::directory_iterator(folder))
+	{
+		if (entry.is_regular_file() && entry.path().extension() == ".dat")
+		{
+			files.push_back(entry.path());
+		}
+	}
+
+	// Sort the paths (default < orders by lexicographical filename)
+	std::sort(files.begin(), files.end());
+
+	for (const auto& file : files)
+	{
+		PlasmaRateCoefficient newPRC(file.filename().string());
+		newPRC.Load(file);
+		AddPlasmaRateCoefficient(newPRC);
+	}
+
+	// TODO maybe not necessary
+	m_foldername = folder.filename().string();
+}
+
+void PlasmaRateCoefficientFolder::SetAllPlotted(bool plot)
+{
+	for (PlasmaRateCoefficient& prc : m_plasmaRateCoefficients)
+	{
+		prc.SetPlotted(plot);
+	}
 }
