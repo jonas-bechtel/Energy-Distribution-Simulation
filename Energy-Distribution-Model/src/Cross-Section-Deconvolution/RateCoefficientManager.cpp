@@ -311,7 +311,7 @@ void RateCoefficientManager::ResetAllRateCoefficientIndeces()
 	}
 }
 
-bool RateCoefficientManager::IsFolderInList(std::string& foldername)
+bool RateCoefficientManager::IsFolderInList(const std::string& foldername)
 {
 	return std::find(s_folderNameList.begin(), s_folderNameList.end(), foldername) != s_folderNameList.end();
 }
